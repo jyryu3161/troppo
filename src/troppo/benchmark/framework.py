@@ -39,6 +39,20 @@ class BenchmarkResult:
     task_completion: Optional[Dict[str, bool]] = None
     task_completion_rate: Optional[float] = None
 
+    # Gene essentiality validation
+    essentiality_accuracy: Optional[float] = None
+    essentiality_precision: Optional[float] = None
+    essentiality_recall: Optional[float] = None
+    essentiality_f1: Optional[float] = None
+    essentiality_mcc: Optional[float] = None
+    essentiality_result: Optional[Any] = None  # Full GeneEssentialityResult
+
+    # Theoretical yield validation
+    yield_results: Optional[List[Any]] = None  # List of TheoreticalYieldResult
+    avg_aerobic_yield: Optional[float] = None
+    avg_anaerobic_yield: Optional[float] = None
+    num_feasible_conditions: Optional[int] = None
+
     # Statistical metrics
     num_genes_mapped: Optional[int] = None
     num_reactions_with_gpr: Optional[int] = None
@@ -254,6 +268,9 @@ class BenchmarkRunner:
         methods: Optional[List[str]] = None,
         validation_tasks: Optional[Dict] = None,
         biomass_reaction: Optional[str] = None,
+        essential_genes: Optional[List[str]] = None,
+        non_essential_genes: Optional[List[str]] = None,
+        carbon_sources: Optional[List[str]] = None,
         verbose: bool = True
     ):
         """
@@ -271,6 +288,12 @@ class BenchmarkRunner:
             Metabolic tasks for validation
         biomass_reaction : str, optional
             ID of biomass reaction for growth rate calculation
+        essential_genes : List[str], optional
+            List of experimentally verified essential genes
+        non_essential_genes : List[str], optional
+            List of experimentally verified non-essential genes
+        carbon_sources : List[str], optional
+            List of carbon sources to test for theoretical yields
         verbose : bool
             Print progress messages
         """
@@ -279,6 +302,9 @@ class BenchmarkRunner:
         self.methods = methods
         self.validation_tasks = validation_tasks
         self.biomass_reaction = biomass_reaction
+        self.essential_genes = essential_genes
+        self.non_essential_genes = non_essential_genes
+        self.carbon_sources = carbon_sources or ['glucose', 'acetate', 'glycerol']
         self.verbose = verbose
 
         # Get methods from registry if not specified
@@ -290,7 +316,9 @@ class BenchmarkRunner:
         self,
         method_configs: Optional[Dict[str, Dict]] = None,
         validate_biology: bool = True,
-        validate_consistency: bool = True
+        validate_consistency: bool = True,
+        validate_essentiality: bool = True,
+        validate_yields: bool = True
     ) -> BenchmarkComparison:
         """
         Run benchmark for all methods
@@ -303,6 +331,10 @@ class BenchmarkRunner:
             Whether to perform biological validation
         validate_consistency : bool
             Whether to check network consistency
+        validate_essentiality : bool
+            Whether to validate gene essentiality predictions
+        validate_yields : bool
+            Whether to calculate theoretical yields
 
         Returns
         -------
@@ -327,7 +359,9 @@ class BenchmarkRunner:
                     method_name,
                     config,
                     validate_biology,
-                    validate_consistency
+                    validate_consistency,
+                    validate_essentiality,
+                    validate_yields
                 )
                 results[method_name] = result
 
@@ -368,7 +402,9 @@ class BenchmarkRunner:
         method_name: str,
         config: Dict,
         validate_biology: bool,
-        validate_consistency: bool
+        validate_consistency: bool,
+        validate_essentiality: bool,
+        validate_yields: bool
     ) -> BenchmarkResult:
         """Run a single method and collect metrics"""
         from troppo.methods.registry import MethodRegistry
@@ -424,6 +460,14 @@ class BenchmarkRunner:
         # Consistency validation
         if validate_consistency:
             self._validate_consistency(result, selected_indices)
+
+        # Gene essentiality validation
+        if validate_essentiality and (self.essential_genes or self.non_essential_genes):
+            self._validate_essentiality(result, selected_indices)
+
+        # Theoretical yield validation
+        if validate_yields:
+            self._validate_yields(result, selected_indices)
 
         return result
 
@@ -574,6 +618,95 @@ class BenchmarkRunner:
         except Exception as e:
             if self.verbose:
                 print(f"  Warning: Consistency validation failed: {str(e)}")
+
+    def _validate_essentiality(self, result: BenchmarkResult, selected_indices: List[int]):
+        """Validate gene essentiality predictions"""
+        try:
+            from troppo.benchmark.validation import GeneEssentialityValidator
+            import cobra
+
+            # Create tissue-specific model
+            original_model = self.model_wrapper.model_reader.model
+            tissue_model = original_model.copy()
+
+            selected_ids = [self.model_wrapper.model_reader.r_ids[i] for i in selected_indices]
+            reactions_to_remove = [rxn for rxn in tissue_model.reactions if rxn.id not in selected_ids]
+            tissue_model.remove_reactions(reactions_to_remove, remove_orphans=True)
+
+            # Create validator
+            validator = GeneEssentialityValidator(
+                essential_genes=self.essential_genes,
+                non_essential_genes=self.non_essential_genes,
+                growth_threshold=0.01
+            )
+
+            # Validate
+            essentiality_result = validator.validate(tissue_model)
+
+            # Store results
+            result.essentiality_accuracy = essentiality_result.accuracy
+            result.essentiality_precision = essentiality_result.precision
+            result.essentiality_recall = essentiality_result.recall
+            result.essentiality_f1 = essentiality_result.f1_score
+            result.essentiality_mcc = essentiality_result.matthews_correlation
+            result.essentiality_result = essentiality_result
+
+            if self.verbose:
+                print(f"  Essentiality - Acc: {essentiality_result.accuracy:.3f}, "
+                      f"F1: {essentiality_result.f1_score:.3f}, "
+                      f"MCC: {essentiality_result.matthews_correlation:.3f}")
+
+        except Exception as e:
+            if self.verbose:
+                print(f"  Warning: Essentiality validation failed: {str(e)}")
+
+    def _validate_yields(self, result: BenchmarkResult, selected_indices: List[int]):
+        """Calculate theoretical yields for various carbon sources"""
+        try:
+            from troppo.benchmark.validation import TheoreticalYieldCalculator
+            import cobra
+
+            # Create tissue-specific model
+            original_model = self.model_wrapper.model_reader.model
+            tissue_model = original_model.copy()
+
+            selected_ids = [self.model_wrapper.model_reader.r_ids[i] for i in selected_indices]
+            reactions_to_remove = [rxn for rxn in tissue_model.reactions if rxn.id not in selected_ids]
+            tissue_model.remove_reactions(reactions_to_remove, remove_orphans=True)
+
+            # Create calculator
+            calculator = TheoreticalYieldCalculator(
+                biomass_reaction=self.biomass_reaction
+            )
+
+            # Calculate yields
+            yield_results = calculator.calculate_yields(
+                tissue_model,
+                carbon_sources=self.carbon_sources,
+                aerobic=True,
+                anaerobic=True,
+                product='biomass'
+            )
+
+            # Store results
+            result.yield_results = yield_results
+
+            # Calculate averages
+            aerobic_yields = [r.theoretical_yield for r in yield_results if r.aerobic and r.feasible]
+            anaerobic_yields = [r.theoretical_yield for r in yield_results if not r.aerobic and r.feasible]
+
+            result.avg_aerobic_yield = np.mean(aerobic_yields) if aerobic_yields else 0.0
+            result.avg_anaerobic_yield = np.mean(anaerobic_yields) if anaerobic_yields else 0.0
+            result.num_feasible_conditions = len([r for r in yield_results if r.feasible])
+
+            if self.verbose:
+                print(f"  Yields - Aerobic: {result.avg_aerobic_yield:.3f}, "
+                      f"Anaerobic: {result.avg_anaerobic_yield:.3f}, "
+                      f"Feasible: {result.num_feasible_conditions}/{len(yield_results)}")
+
+        except Exception as e:
+            if self.verbose:
+                print(f"  Warning: Yield validation failed: {str(e)}")
 
 
 def quick_benchmark(

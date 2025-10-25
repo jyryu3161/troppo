@@ -13,9 +13,24 @@ from .framework import (
     quick_benchmark
 )
 
+from .validation import (
+    GeneEssentialityValidator,
+    GeneEssentialityResult,
+    TheoreticalYieldCalculator,
+    TheoreticalYieldResult,
+    compare_yields_across_methods,
+    create_essentiality_confusion_matrix
+)
+
 __all__ = [
     'BenchmarkResult',
     'BenchmarkComparison',
     'BenchmarkRunner',
-    'quick_benchmark'
+    'quick_benchmark',
+    'GeneEssentialityValidator',
+    'GeneEssentialityResult',
+    'TheoreticalYieldCalculator',
+    'TheoreticalYieldResult',
+    'compare_yields_across_methods',
+    'create_essentiality_confusion_matrix'
 ]
