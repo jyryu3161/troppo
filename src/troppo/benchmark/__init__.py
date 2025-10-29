@@ -22,6 +22,16 @@ from .validation import (
     create_essentiality_confusion_matrix
 )
 
+from .gene_id_utils import (
+    detect_id_type,
+    convert_gene_ids,
+    standardize_gene_ids,
+    match_gene_lists,
+    FlexibleGeneIDHandler,
+    prepare_validation_genes,
+    normalize_id_type
+)
+
 __all__ = [
     'BenchmarkResult',
     'BenchmarkComparison',
@@ -32,5 +42,12 @@ __all__ = [
     'TheoreticalYieldCalculator',
     'TheoreticalYieldResult',
     'compare_yields_across_methods',
-    'create_essentiality_confusion_matrix'
+    'create_essentiality_confusion_matrix',
+    'detect_id_type',
+    'convert_gene_ids',
+    'standardize_gene_ids',
+    'match_gene_lists',
+    'FlexibleGeneIDHandler',
+    'prepare_validation_genes',
+    'normalize_id_type'
 ]

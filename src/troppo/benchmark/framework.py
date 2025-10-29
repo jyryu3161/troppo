@@ -270,6 +270,8 @@ class BenchmarkRunner:
         biomass_reaction: Optional[str] = None,
         essential_genes: Optional[List[str]] = None,
         non_essential_genes: Optional[List[str]] = None,
+        essential_genes_id_type: Optional[str] = None,
+        non_essential_genes_id_type: Optional[str] = None,
         carbon_sources: Optional[List[str]] = None,
         verbose: bool = True
     ):
@@ -292,6 +294,12 @@ class BenchmarkRunner:
             List of experimentally verified essential genes
         non_essential_genes : List[str], optional
             List of experimentally verified non-essential genes
+        essential_genes_id_type : str, optional
+            ID type for essential genes (e.g., 'entrez_id', 'ensembl_gene_id', 'symbol')
+            Auto-detected if not specified
+        non_essential_genes_id_type : str, optional
+            ID type for non-essential genes
+            Auto-detected if not specified
         carbon_sources : List[str], optional
             List of carbon sources to test for theoretical yields
         verbose : bool
@@ -304,6 +312,8 @@ class BenchmarkRunner:
         self.biomass_reaction = biomass_reaction
         self.essential_genes = essential_genes
         self.non_essential_genes = non_essential_genes
+        self.essential_genes_id_type = essential_genes_id_type
+        self.non_essential_genes_id_type = non_essential_genes_id_type
         self.carbon_sources = carbon_sources or ['glucose', 'acetate', 'glycerol']
         self.verbose = verbose
 
@@ -311,6 +321,89 @@ class BenchmarkRunner:
         if self.methods is None:
             from troppo.methods.registry import MethodRegistry
             self.methods = MethodRegistry.list_methods()
+
+        # Prepare gene IDs for validation
+        self._prepare_gene_ids()
+
+    def _prepare_gene_ids(self):
+        """Prepare and standardize gene IDs for validation"""
+        if not (self.essential_genes or self.non_essential_genes):
+            self.essential_genes_converted = None
+            self.non_essential_genes_converted = None
+            return
+
+        try:
+            from troppo.benchmark.gene_id_utils import (
+                detect_id_type,
+                convert_gene_ids,
+                normalize_id_type
+            )
+
+            # Get model gene IDs
+            try:
+                model_genes = [g.id for g in self.model_wrapper.model_reader.model.genes]
+                model_id_type = detect_id_type(model_genes[:100])  # Sample first 100
+                if self.verbose:
+                    print(f"  Model gene ID type detected: {model_id_type}")
+            except:
+                model_id_type = 'symbol'
+                if self.verbose:
+                    print(f"  Model gene ID type: using default '{model_id_type}'")
+
+            # Convert essential genes
+            if self.essential_genes:
+                if self.essential_genes_id_type:
+                    source_type = normalize_id_type(self.essential_genes_id_type)
+                else:
+                    source_type = detect_id_type(self.essential_genes)
+
+                if self.verbose:
+                    print(f"  Essential genes ID type: {source_type}")
+
+                if source_type != model_id_type:
+                    conv = convert_gene_ids(
+                        self.essential_genes,
+                        from_type=source_type,
+                        to_type=model_id_type
+                    )
+                    self.essential_genes_converted = list(conv.values())
+                    if self.verbose:
+                        print(f"  Converted {len(self.essential_genes_converted)}/{len(self.essential_genes)} essential genes")
+                else:
+                    self.essential_genes_converted = self.essential_genes
+            else:
+                self.essential_genes_converted = None
+
+            # Convert non-essential genes
+            if self.non_essential_genes:
+                if self.non_essential_genes_id_type:
+                    source_type = normalize_id_type(self.non_essential_genes_id_type)
+                else:
+                    source_type = detect_id_type(self.non_essential_genes)
+
+                if self.verbose:
+                    print(f"  Non-essential genes ID type: {source_type}")
+
+                if source_type != model_id_type:
+                    conv = convert_gene_ids(
+                        self.non_essential_genes,
+                        from_type=source_type,
+                        to_type=model_id_type
+                    )
+                    self.non_essential_genes_converted = list(conv.values())
+                    if self.verbose:
+                        print(f"  Converted {len(self.non_essential_genes_converted)}/{len(self.non_essential_genes)} non-essential genes")
+                else:
+                    self.non_essential_genes_converted = self.non_essential_genes
+            else:
+                self.non_essential_genes_converted = None
+
+        except Exception as e:
+            if self.verbose:
+                print(f"  Warning: Gene ID conversion failed: {str(e)}")
+                print(f"  Using original gene IDs without conversion")
+            self.essential_genes_converted = self.essential_genes
+            self.non_essential_genes_converted = self.non_essential_genes
 
     def run_benchmark(
         self,
@@ -633,10 +726,10 @@ class BenchmarkRunner:
             reactions_to_remove = [rxn for rxn in tissue_model.reactions if rxn.id not in selected_ids]
             tissue_model.remove_reactions(reactions_to_remove, remove_orphans=True)
 
-            # Create validator
+            # Create validator with converted gene IDs
             validator = GeneEssentialityValidator(
-                essential_genes=self.essential_genes,
-                non_essential_genes=self.non_essential_genes,
+                essential_genes=self.essential_genes_converted,
+                non_essential_genes=self.non_essential_genes_converted,
                 growth_threshold=0.01
             )
 
