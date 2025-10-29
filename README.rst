@@ -53,28 +53,83 @@ Compare multiple methods systematically with comprehensive metrics:
 
 ::
 
-    from troppo.benchmark import quick_benchmark
+    from troppo.benchmark import BenchmarkRunner
 
-    # Compare methods with one line
-    summary = quick_benchmark(
+    # Compare methods with validation
+    runner = BenchmarkRunner(
         model_wrapper=model_wrapper,
         data_map=data_map,
-        methods=['gimme', 'tinit', 'imat', 'fastcore']
+        methods=['gimme', 'tinit', 'imat', 'fastcore'],
+        # Gene essentiality validation
+        essential_genes=['GAPDH', 'HMGCR', 'PGK1'],
+        non_essential_genes=['BRCA1', 'BRCA2', 'TP53'],
+        # Theoretical yield validation
+        carbon_sources=['glucose', 'acetate', 'glycerol'],
+        biomass_reaction='biomass_human'
+    )
+
+    comparison = runner.run_benchmark(
+        validate_essentiality=True,
+        validate_yields=True
     )
 
 Features include:
 
     - Automatic performance metrics (time, memory, model size)
     - Biological validation (biomass flux, task completion)
+    - Gene essentiality validation (accuracy, precision, recall, F1, MCC)
+    - Theoretical yield calculations (aerobic and anaerobic conditions)
     - Network quality metrics (consistency, blocked reactions)
-    - Rich visualizations (heatmaps, radar charts, Pareto fronts)
+    - Rich visualizations (heatmaps, radar charts, Pareto fronts, confusion matrices)
     - Automated report generation
+
+**Multi-Nomenclature Gene ID Support**
+
+Troppo automatically handles different gene ID nomenclatures for validation:
+
+::
+
+    from troppo.benchmark import BenchmarkRunner
+
+    # Use Entrez IDs for validation data
+    runner = BenchmarkRunner(
+        model_wrapper=model_wrapper,
+        data_map=data_map,
+        methods=['gimme', 'tinit', 'imat'],
+        # Essential genes in Entrez ID format
+        essential_genes=['2597', '3156', '5230'],  # GAPDH, HMGCR, PGK1
+        essential_genes_id_type='entrez_id',
+        # Non-essential genes in Ensembl ID format
+        non_essential_genes=['ENSG00000139618', 'ENSG00000141510'],
+        non_essential_genes_id_type='ensembl_gene_id'
+    )
+
+    # IDs are automatically converted to match your model's nomenclature
+    comparison = runner.run_benchmark(validate_essentiality=True)
+
+Supported ID types:
+
+    - ``entrez_id`` - NCBI Entrez Gene IDs (e.g., '2597')
+    - ``ensembl_gene_id`` - Ensembl Gene IDs (e.g., 'ENSG00000111640')
+    - ``symbol`` - HGNC Gene Symbols (e.g., 'GAPDH')
+    - ``hgnc_id`` - HGNC IDs (e.g., 'HGNC:4141')
+    - ``uniprot_ids`` - UniProt IDs
+
+Features include:
+
+    - Automatic ID type detection
+    - Automatic conversion using HGNC database
+    - Support for mixed ID types
+    - Flexible ID handler for complex scenarios
+    - Verbose logging of conversion process
 
 **Tutorials and Examples**
 
     - ``tests/Troppo_tutorial_omics_integration.ipynb`` - Comprehensive omics integration tutorial
     - ``tests/Troppo_tutorial_benchmark.ipynb`` - Method comparison and benchmarking
     - ``examples/custom_method_example.py`` - Complete custom method implementation
+    - ``examples/benchmark_with_validation_example.py`` - Gene essentiality and yield validation
+    - ``examples/benchmark_with_entrez_ids_example.py`` - Using Entrez IDs in benchmarks
     - ``run_omics_integration.sh`` - Automated pipeline script
 
 **Documentation**
