@@ -13,6 +13,7 @@ This guide explains how to integrate omics data into metabolic models using the 
   - [Shell Script 실행](#shell-script-실행)
 - [통합 방법론 (Integration Methods)](#통합-방법론-integration-methods)
 - [예제 (Examples)](#예제-examples)
+- [유전자 ID 명명법 처리 (Handling Gene ID Nomenclatures)](#유전자-id-명명법-처리-handling-gene-id-nomenclatures)
 - [문제 해결 (Troubleshooting)](#문제-해결-troubleshooting)
 
 ---
@@ -364,6 +365,140 @@ ENSG00000000003,5.7,6.2,4.9,...
 - **요구사항**:
   - GPR (Gene-Protein-Reaction) rules 포함
   - 유전자 ID가 오믹스 데이터와 일치하는 nomenclature 사용
+
+---
+
+## 유전자 ID 명명법 처리 (Handling Gene ID Nomenclatures)
+
+### 다양한 ID 타입 지원 (Support for Multiple ID Types)
+
+Troppo는 발현 데이터와 대사 모델 간 유전자 ID 불일치를 자동으로 처리합니다.
+
+Troppo automatically handles gene ID mismatches between expression data and metabolic models.
+
+#### 지원되는 ID 타입 (Supported ID Types)
+
+- **Entrez ID**: NCBI Entrez Gene IDs (예: '2597', '3156')
+- **Ensembl Gene ID**: Ensembl Gene IDs (예: 'ENSG00000111640')
+- **Symbol**: HGNC Gene Symbols (예: 'GAPDH', 'HMGCR')
+- **HGNC ID**: HGNC IDs (예: 'HGNC:4141')
+- **UniProt ID**: UniProt IDs
+
+### 방법 1: 딕셔너리에서 직접 데이터 맵 생성 (Direct Dictionary to Data Map)
+
+가장 간단한 방법:
+
+```python
+from troppo.omics import create_data_map_from_dict
+
+# 발현 데이터 (Entrez ID 사용)
+expression_data = {
+    '2597': 100.5,   # GAPDH (Entrez ID)
+    '3156': 85.2,    # HMGCR (Entrez ID)
+    '5230': 95.8,    # PGK1 (Entrez ID)
+}
+
+# 자동 ID 변환을 통한 데이터 맵 생성
+data_map = create_data_map_from_dict(
+    expression_data=expression_data,
+    model_wrapper=model_wrapper,
+    gene_id_type='entrez_id',  # ID 타입 명시 (또는 자동 감지)
+    auto_convert=True,          # 자동 변환 활성화
+    verbose=True
+)
+```
+
+### 방법 2: OmicsContainer 사용 (Using OmicsContainer)
+
+더 세밀한 제어가 필요한 경우:
+
+```python
+from troppo.omics import OmicsContainer, create_compatible_data_map
+
+# Entrez ID로 OmicsContainer 생성
+omics_container = OmicsContainer(
+    omicstype='transcriptomics',
+    condition='sample1',
+    data=expression_data,
+    nomenclature='entrez_id'
+)
+
+# 자동 ID 변환을 통한 호환 데이터 맵 생성
+data_map = create_compatible_data_map(
+    omics_container=omics_container,
+    model_wrapper=model_wrapper,
+    auto_convert=True,
+    verbose=True
+)
+```
+
+### 방법 3: 벤치마크에서 혼합 ID 타입 사용 (Mixed ID Types in Benchmark)
+
+발현 데이터와 검증 데이터에 서로 다른 ID 타입 사용:
+
+```python
+from troppo.omics import create_data_map_from_dict
+from troppo.benchmark import BenchmarkRunner
+
+# 발현 데이터: Entrez IDs
+expression_data = {'2597': 100.5, '3156': 85.2}
+
+# 데이터 맵 생성 (Entrez ID 자동 변환)
+data_map = create_data_map_from_dict(
+    expression_data,
+    model_wrapper,
+    gene_id_type='entrez_id',
+    auto_convert=True
+)
+
+# 벤치마크: 필수 유전자는 Ensembl ID, 비필수 유전자는 Symbol
+runner = BenchmarkRunner(
+    model_wrapper=model_wrapper,
+    data_map=data_map,
+    methods=['gimme', 'fastcore'],
+    # 필수 유전자 (Ensembl IDs)
+    essential_genes=['ENSG00000111640', 'ENSG00000102144'],
+    essential_genes_id_type='ensembl_gene_id',
+    # 비필수 유전자 (Symbols)
+    non_essential_genes=['HMGCR', 'TP53'],
+    non_essential_genes_id_type='symbol'
+)
+
+comparison = runner.run_benchmark(validate_essentiality=True)
+```
+
+### 자동 ID 감지 (Automatic ID Detection)
+
+ID 타입을 지정하지 않으면 자동으로 감지됩니다:
+
+```python
+from troppo.omics import detect_expression_data_id_type
+
+# ID 타입 자동 감지
+id_type = detect_expression_data_id_type(expression_data)
+print(f"Detected ID type: {id_type}")
+
+# 자동 감지를 사용한 데이터 맵 생성 (gene_id_type 생략)
+data_map = create_data_map_from_dict(
+    expression_data,
+    model_wrapper,
+    auto_convert=True  # ID 타입은 자동 감지됨
+)
+```
+
+### 완전한 예제 (Complete Example)
+
+전체 워크플로우 예제는 다음 파일을 참조하세요:
+
+```bash
+python examples/expression_data_with_entrez_ids.py
+```
+
+이 예제는 다음을 포함합니다:
+- Entrez ID 발현 데이터 사용
+- 자동 ID 변환
+- 혼합 ID 타입을 사용한 벤치마킹
+- 여러 명명법 통합 방법
 
 ---
 
