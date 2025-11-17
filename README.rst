@@ -54,191 +54,144 @@ Key Features
 New Features
 ~~~~~~~~~~~~
 
-**Extensible Plugin System**
-
-Troppo now includes a plugin-like registry system that makes it easy to add new reconstruction methods:
-
-::
-
-    from troppo.methods.registry import MethodRegistry, register_method
-
-    # Register your custom method
-    @register_method('my_method', description='My custom method')
-    class MyMethod(ContextSpecificModelReconstructionAlgorithm):
-        # ... implementation ...
-
-    # Use it immediately
-    method = MethodRegistry.create_method('my_method', S, lb, ub, properties)
-    result = method.run()
-
 **Benchmark Framework**
 
-Compare multiple methods systematically with comprehensive metrics:
+Systematically compare multiple reconstruction methods with comprehensive metrics and validation:
 
 ::
 
     from troppo.benchmark import BenchmarkRunner
 
-    # Compare methods with validation
     runner = BenchmarkRunner(
         model_wrapper=model_wrapper,
         data_map=data_map,
         methods=['gimme', 'tinit', 'imat', 'fastcore'],
-        # Gene essentiality validation
-        essential_genes=['GAPDH', 'HMGCR', 'PGK1'],
-        non_essential_genes=['BRCA1', 'BRCA2', 'TP53'],
-        # Theoretical yield validation
-        carbon_sources=['glucose', 'acetate', 'glycerol'],
-        biomass_reaction='biomass_human'
+        biomass_reaction='biomass_human',
+        essential_genes=['ENSG00000111640', 'ENSG00000100292'],  # GAPDH, HMGCR
+        non_essential_genes=['ENSG00000139618', 'ENSG00000141510']  # BRCA2, TP53
     )
 
-    comparison = runner.run_benchmark(
-        validate_essentiality=True,
-        validate_yields=True
-    )
+    comparison = runner.run_benchmark(validate_essentiality=True)
 
 Features include:
 
-    - Automatic performance metrics (time, memory, model size)
-    - Biological validation (biomass flux, task completion)
-    - Gene essentiality validation (accuracy, precision, recall, F1, MCC)
-    - Theoretical yield calculations (aerobic and anaerobic conditions)
-    - Network quality metrics (consistency, blocked reactions)
-    - Rich visualizations (heatmaps, radar charts, Pareto fronts, confusion matrices)
+    - Performance metrics (time, memory, model size)
+    - Biological validation (biomass flux, gene essentiality)
+    - Statistical metrics (accuracy, precision, recall, F1, MCC)
+    - Rich visualizations (heatmaps, confusion matrices, radar charts)
     - Automated report generation
 
-**Expression Data with Any Gene ID Nomenclature**
+**Gene ID Support**
 
-Troppo now supports expression data with any gene ID format, automatically converting to match your model:
-
-::
-
-    from troppo.omics import create_data_map_from_dict
-
-    # Expression data with Entrez IDs (or any other ID type)
-    expression_data = {
-        '2597': 100.5,   # GAPDH (Entrez ID)
-        '3156': 85.2,    # HMGCR (Entrez ID)
-        '5230': 95.8     # PGK1 (Entrez ID)
-    }
-
-    # Automatically converts IDs to match your model
-    data_map = create_data_map_from_dict(
-        expression_data,
-        model_wrapper,
-        gene_id_type='entrez_id',  # or auto-detect if omitted
-        auto_convert=True,
-        verbose=True
-    )
-
-**Multi-Nomenclature Gene ID Support**
-
-Use different ID types for expression data and validation data in the same workflow:
-
-::
-
-    from troppo.omics import create_data_map_from_dict
-    from troppo.benchmark import BenchmarkRunner
-
-    # Expression data: Entrez IDs
-    expression_data = {'2597': 100.5, '3156': 85.2}
-    data_map = create_data_map_from_dict(
-        expression_data,
-        model_wrapper,
-        gene_id_type='entrez_id',
-        auto_convert=True
-    )
-
-    # Benchmark with different ID types for validation
-    runner = BenchmarkRunner(
-        model_wrapper=model_wrapper,
-        data_map=data_map,
-        methods=['gimme', 'tinit', 'imat'],
-        # Essential genes in Ensembl ID format
-        essential_genes=['ENSG00000111640', 'ENSG00000102144'],
-        essential_genes_id_type='ensembl_gene_id',
-        # Non-essential genes in Symbol format
-        non_essential_genes=['HMGCR', 'TP53'],
-        non_essential_genes_id_type='symbol'
-    )
-
-    # All IDs automatically converted to match model
-    comparison = runner.run_benchmark(validate_essentiality=True)
+Troppo automatically handles multiple gene ID formats:
 
 Supported ID types:
 
-    - ``entrez_id`` - NCBI Entrez Gene IDs (e.g., '2597')
     - ``ensembl_gene_id`` - Ensembl Gene IDs (e.g., 'ENSG00000111640')
+    - ``entrez_id`` - NCBI Entrez Gene IDs (e.g., '2597')
     - ``symbol`` - HGNC Gene Symbols (e.g., 'GAPDH')
     - ``hgnc_id`` - HGNC IDs (e.g., 'HGNC:4141')
     - ``uniprot_ids`` - UniProt IDs
 
-Features include:
+Features:
 
-    - Automatic ID type detection for expression data
+    - Automatic ID type detection
     - Automatic conversion using HGNC database
-    - Support for mixed ID types in single workflow
-    - Works seamlessly with benchmark and validation
-    - Verbose logging of conversion process
+    - Support for mixed ID types in workflows
+    - Works seamlessly with benchmarking
 
-**Quick Start**
+**Quick Start: COVID-19 Case Study**
 
-Basic workflow for omics integration:
+Here's a complete, runnable example using the COVID-19 case study data:
 
 ::
 
-    from troppo.methods_wrappers import ModelBasedWrapper
-    from troppo.omics import create_data_map_from_dict
-    from troppo.methods.reconstruction.gimme import GIMME, GIMMEProperties
+    import pandas as pd
     import cobra
+    import re
+    from troppo.methods_wrappers import ModelBasedWrapper
+    from troppo.omics.readers.generic import TabularReader
+    from troppo.benchmark import BenchmarkRunner
 
-    # 1. Load metabolic model
-    model = cobra.io.read_sbml_model('path/to/model.xml')
-    model_wrapper = ModelBasedWrapper(model)
+    # 1. Load model and expression data (Ensembl Gene IDs)
+    model = cobra.io.read_sbml_model('examples/covid19_case_study/HumanGEM_Consistent_COVID19_HAM.xml')
+    expression_data = pd.read_csv('examples/covid19_case_study/Desai-GTEx_ensembl.csv', index_col=0)
 
-    # 2. Prepare expression data (any gene ID format)
-    expression_data = {
-        '2597': 100.5,   # GAPDH
-        '3156': 85.2,    # HMGCR
-        '5230': 95.8     # PGK1
-        # ... more genes
-    }
+    # 2. Create data containers
+    reader = TabularReader(
+        path_or_df=expression_data,
+        nomenclature='ensemble_gene_id',
+        omics_type='transcriptomics'
+    )
+    omics_container = reader.to_containers()[0]
 
-    # 3. Create data map (automatic ID conversion)
-    data_map = create_data_map_from_dict(
-        expression_data,
-        model_wrapper,
-        gene_id_type='entrez_id',
-        auto_convert=True
+    # GPR parsing helper
+    patt = re.compile('__COBAMPGPRDOT__[0-9]{1}')
+    replace_alt_transcripts = lambda x: patt.sub('', x)
+
+    # 3. Create model wrapper and map genes to reactions
+    model_wrapper = ModelBasedWrapper(
+        model=model,
+        ttg_ratio=9999,
+        gpr_gene_parse_function=replace_alt_transcripts
     )
 
-    # 4. Run tissue-specific reconstruction
-    properties = GIMMEProperties(
+    data_map = omics_container.get_integrated_data_map(
+        model_reader=model_wrapper.model_reader,
+        and_func=min,
+        or_func=sum
+    )
+
+    # 4. Run benchmark comparing multiple methods
+    runner = BenchmarkRunner(
+        model_wrapper=model_wrapper,
+        data_map=data_map,
+        methods=['gimme', 'fastcore', 'imat'],
+        biomass_reaction='biomass_human'
+    )
+
+    comparison = runner.run_benchmark()
+
+    # 5. View results
+    print(comparison.get_summary_dataframe())
+
+**Using tINIT with Metabolic Tasks**
+
+For tINIT reconstruction, you can use metabolic task definitions:
+
+::
+
+    from troppo.methods.reconstruction.init import INIT, INITProperties
+    import json
+
+    # Load metabolic tasks (for tINIT)
+    with open('examples/covid19_case_study/HumanGEM_nl2019_tasks_compact.json', 'r') as f:
+        tasks = json.load(f)
+
+    # Or use essential metabolic tasks from MCF7 study
+    # tasks_file = 'examples/mcf7_case_study/data/metabolicTasks_Essential.xlsx'
+
+    # Run tINIT with tasks
+    properties = INITProperties(
         exp_vector=list(data_map.get_scores().values()),
-        obj_frac=0.9
+        tasks=tasks
     )
 
-    gimme = GIMME(
+    tinit = INIT(
         S=model_wrapper.S,
         lb=model_wrapper.lb,
         ub=model_wrapper.ub,
         properties=properties
     )
 
-    result = gimme.run()
+    result = tinit.run()
 
-**Tutorials and Examples**
+**Additional Examples and Documentation**
 
-    - ``tests/Troppo_tutorial_omics_integration.ipynb`` - Comprehensive omics integration tutorial
-    - ``tests/Troppo_tutorial_benchmark.ipynb`` - Method comparison and benchmarking
-    - ``examples/custom_method_example.py`` - Complete custom method implementation
-    - ``examples/benchmark_with_validation_example.py`` - Gene essentiality and yield validation
-    - ``examples/benchmark_with_entrez_ids_example.py`` - Using Entrez IDs in benchmarks
-    - ``examples/expression_data_with_entrez_ids.py`` - Expression data with different ID types
-    - ``run_omics_integration.sh`` - Automated pipeline script
-
-**Documentation**
-
+    - ``examples/covid19_case_study/`` - Complete COVID-19 case study
+    - ``examples/mcf7_case_study/`` - MCF7 cell line case study
+    - ``tests/Troppo_tutorial_omics_integration.ipynb`` - Comprehensive tutorial
+    - ``tests/Troppo_tutorial_benchmark.ipynb`` - Benchmarking tutorial
     - ``OMICS_INTEGRATION_GUIDE.md`` - User guide for omics integration
     - ``EXTENSIBILITY_GUIDE.md`` - Developer guide for extending Troppo
 
@@ -259,77 +212,54 @@ Instalation from github (latest development release)
 Usage
 ~~~~~
 
-**Using Expression Data with Different Gene IDs**
+**Basic Workflow**
 
-Troppo makes it easy to work with expression data in any gene ID format:
+1. **Load your data** - Use the COVID-19 example as a template::
 
-Method 1 - Direct from dictionary (simplest)::
+    import pandas as pd
+    import cobra
+    from troppo.methods_wrappers import ModelBasedWrapper
+    from troppo.omics.readers.generic import TabularReader
 
-    from troppo.omics import create_data_map_from_dict
+    # Load metabolic model and expression data
+    model = cobra.io.read_sbml_model('path/to/model.xml')
+    expression_data = pd.read_csv('path/to/expression.csv', index_col=0)
 
-    expression_data = {'2597': 100.5, '3156': 85.2}  # Entrez IDs
-    data_map = create_data_map_from_dict(
-        expression_data,
-        model_wrapper,
-        gene_id_type='entrez_id',
-        auto_convert=True
+2. **Create data map** - Troppo automatically handles Ensembl, Entrez, Symbol, and other gene IDs::
+
+    reader = TabularReader(
+        path_or_df=expression_data,
+        nomenclature='ensemble_gene_id',  # or 'entrez_id', 'symbol', etc.
+        omics_type='transcriptomics'
+    )
+    omics_container = reader.to_containers()[0]
+    model_wrapper = ModelBasedWrapper(model)
+    data_map = omics_container.get_integrated_data_map(
+        model_reader=model_wrapper.model_reader,
+        and_func=min,
+        or_func=sum
     )
 
-Method 2 - Using OmicsContainer::
-
-    from troppo.omics import OmicsContainer, create_compatible_data_map
-
-    omics_container = OmicsContainer(
-        omicstype='transcriptomics',
-        condition='sample1',
-        data=expression_data,
-        nomenclature='entrez_id'
-    )
-
-    data_map = create_compatible_data_map(
-        omics_container,
-        model_wrapper,
-        auto_convert=True
-    )
-
-**Running Benchmarks**
-
-Compare multiple methods with automatic validation::
+3. **Run reconstruction** - Use any method (GIMME, tINIT, iMAT, FastCORE, CORDA, SWIFTCORE)::
 
     from troppo.benchmark import BenchmarkRunner
 
     runner = BenchmarkRunner(
         model_wrapper=model_wrapper,
         data_map=data_map,
-        methods=['gimme', 'fastcore', 'imat'],
-        essential_genes=['GAPDH', 'PGK1'],
-        carbon_sources=['glucose', 'acetate']
+        methods=['gimme', 'fastcore', 'imat', 'tinit']
     )
+    comparison = runner.run_benchmark()
+    print(comparison.get_summary_dataframe())
 
-    comparison = runner.run_benchmark(
-        validate_essentiality=True,
-        validate_yields=True
-    )
+**Quick Tips**
 
-    # View results
-    summary = comparison.get_summary_dataframe()
-    print(summary)
+- All gene ID formats are supported (Ensembl, Entrez, Symbol, HGNC, UniProt)
+- Use the COVID-19 case study in ``examples/covid19_case_study/`` as a starting point
+- For tINIT, provide metabolic tasks (see example above)
+- Compare methods using ``BenchmarkRunner`` to find the best one for your data
 
-**Troubleshooting Common Issues**
-
-ID mismatch between expression data and model?
-    Use ``auto_convert=True`` when creating data map
-
-Want to check what ID type your data uses?::
-
-    from troppo.omics import detect_expression_data_id_type
-    id_type = detect_expression_data_id_type(expression_data)
-
-Need to convert IDs manually?::
-
-    omics_container.convertIds('symbol')  # Convert to gene symbols
-
-For more details, see ``OMICS_INTEGRATION_GUIDE.md``
+For detailed guides, see ``OMICS_INTEGRATION_GUIDE.md``
 
 Credits and License
 ~~~~~~~~~~~~~~~~~~~
