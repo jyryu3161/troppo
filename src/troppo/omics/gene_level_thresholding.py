@@ -173,7 +173,7 @@ class GeneLevelThresholding:
                                               self.max_expression)
 
         elif self.thresholding_strat == 'local t2':
-            return self.local_t2_thresholding(sample_series, self.global_threshold_lower, self.global_threshold_lower,
+            return self.local_t2_thresholding(sample_series, self.global_threshold_lower, self.global_threshold_upper,
                                               self.local_threshold, self.max_expression)
 
     def apply_thresholding_filter(self) -> pandas.DataFrame:

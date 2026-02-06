@@ -166,9 +166,7 @@ class OmicsContainer:
         """
         Removes every entry whose exp_val is NA
         """
-        for k, v in self.data.items():
-            if np.isnan(v):
-                del self.data[k]
+        self.data = {k: v for k, v in self.data.items() if not (isinstance(v, float) and np.isnan(v))}
 
     def filterByValue(self, op: str, threshold: Union[int, float, tuple, str]) -> 'OmicsContainer':
         """

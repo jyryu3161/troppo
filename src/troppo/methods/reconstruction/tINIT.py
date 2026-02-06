@@ -414,10 +414,9 @@ class tINIT(ContextSpecificModelReconstructionAlgorithm):
 
 		problem.model.configuration.tolerances.feasibility = 1e-8
 		problem.model.configuration.tolerances.optimality = 1e-8
-		problem.model.configuration.verbosity = 3
+		problem.model.configuration.verbosity = 0
 
 		lso = LinearSystemOptimizer(problem)
-		problem.write_to_lp('tINIT_test.lp')
 		if self.present_metabolites_unlisted.size > 0:
 			for i in range(self.present_metabolites_unlisted.size):
 				self.problem_buc[start_index + i] = 1
@@ -438,10 +437,7 @@ class tINIT(ContextSpecificModelReconstructionAlgorithm):
 
 		problem.set_variable_types([problem.model.variables[int_(i)] for i in allInt], VAR_BINARY)
 		problem.set_objective(self.problem_c, True)
-		problem.write_to_lp('tINIT_test.lp')
-		# print(problem.model.to_lp())
 		solution = lso.optimize()
-		print(solution.objective_value())
 
 		if solution.status() != 'optimal':
 			print('The problem is infeasible')

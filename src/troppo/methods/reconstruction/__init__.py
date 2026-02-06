@@ -1,1 +1,2 @@
-from . import tINIT, corda, fastcore, gimme, imat, mba
+from . import tINIT
+from .tINIT import tINIT as tINITAlgorithm, tINITProperties

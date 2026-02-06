@@ -1,3 +1,5 @@
 cobamp==0.2.1
 cobra==0.24.0
-xlrd==1.2.0
+numpy
+pandas
+matplotlib
