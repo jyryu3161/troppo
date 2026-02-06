@@ -4,337 +4,236 @@
 TROPPO
 ============
 
-*Troppo* (Tissue-specific RecOnstruction and Phenotype Prediction using Omics data) is a Python package containing methods
-for tissue specific reconstruction to use with constraint-based models. The main purpose of this package is to provide
-an open-source framework which is both modular and flexible to be integrated with other packages, such as cobrapy, framed
-or cameo whose already provide generic data structures to interpret metabolic models.
+*Troppo* is a Python package for **tINIT-based tissue-specific metabolic model reconstruction** using omics data.
+It provides a streamlined pipeline from expression data to context-specific models with publication-quality analysis and visualization.
 
-A (MI)LP solver is required to use most of the present methods. The current methods support optlang, which in turn allow
-the use of solvers like CPLEX or Gurobi.
+A (MI)LP solver (CPLEX or Gurobi) is required. The package uses optlang for solver abstraction.
 
-*Troppo*'s documentation is available at http://troppo-bisbi.readthedocs.io/.
+Quick Start
+~~~~~~~~~~~
 
-The current methods implemented are:
-    - FastCORE
-    - CORDA
-    - GIMME
-    - (t)INIT
-    - iMAT
-    - SWIFTCORE
+::
 
-Methods to be implemented later:
-    - MBA
-    - mCADRE
-    - PRIME
+    from troppo import TINITReconstructor
+
+    # 3 lines: load, run, analyze
+    recon = TINITReconstructor(
+        model_path="Human-GEM.xml",
+        expression_path="expression_data.csv",
+        solver="CPLEX"
+    )
+    results = recon.run()
+    results.summary()
 
 Key Features
 ~~~~~~~~~~~~
 
+**One-Stop tINIT Pipeline**
+
+    - ``TINITReconstructor``: single entry point from raw data to reconstructed models
+    - Automatic gene ID detection and conversion (Entrez, Ensembl, Symbol, HGNC)
+    - Multi-sample batch processing (10-100 samples)
+    - Configurable score integration strategies
+
+**Rich Result Analysis**
+
+    - ``ReconstructionResults``: container with built-in analysis methods
+    - Reaction overlap, Jaccard similarity, subsystem coverage
+    - Gene essentiality validation (accuracy, precision, recall, F1, MCC)
+    - Theoretical yield calculations
+    - Export to CSV, SBML, or pickle
+
+**Publication-Quality Visualization**
+
+    - 9 plot functions with Nature-style color palette, 300 DPI output
+    - Model size comparison, reaction overlap heatmaps, subsystem coverage
+    - PCA of model composition, biomass distribution, reaction frequency
+    - ``plot_overview()``: composite 2x3 figure for quick reporting
+
 **Flexible Gene ID Handling**
 
-    - Automatic detection and conversion of gene IDs (Entrez, Ensembl, Symbol, HGNC, UniProt)
-    - No manual ID conversion required
-    - Works with any expression data format
-    - Seamless integration with metabolic models
+    - Automatic detection and conversion using HGNC database
+    - Supports: ``entrez_id``, ``ensembl_gene_id``, ``symbol``, ``hgnc_id``, ``uniprot_ids``
+    - Works with CSV/TSV expression data or pandas DataFrames
 
-**Comprehensive Benchmarking**
-
-    - Compare multiple reconstruction methods
-    - Performance metrics (time, memory, model size)
-    - Biological validation (gene essentiality, theoretical yields)
-    - Statistical metrics (accuracy, precision, recall, F1, MCC)
-    - Rich visualizations and automated reports
-
-**Extensible Architecture**
-
-    - Plugin-like system for adding new methods
-    - Easy integration with existing tools (COBRApy, FRAMED, CAMEO)
-    - Modular design for custom workflows
-
-New Features
+Installation
 ~~~~~~~~~~~~
 
-**Extensible Plugin System**
-
-Troppo now includes a plugin-like registry system that makes it easy to add new reconstruction methods:
-
-::
-
-    from troppo.methods.registry import MethodRegistry, register_method
-
-    # Register your custom method
-    @register_method('my_method', description='My custom method')
-    class MyMethod(ContextSpecificModelReconstructionAlgorithm):
-        # ... implementation ...
-
-    # Use it immediately
-    method = MethodRegistry.create_method('my_method', S, lb, ub, properties)
-    result = method.run()
-
-**Benchmark Framework**
-
-Compare multiple methods systematically with comprehensive metrics:
-
-::
-
-    from troppo.benchmark import BenchmarkRunner
-
-    # Compare methods with validation
-    runner = BenchmarkRunner(
-        model_wrapper=model_wrapper,
-        data_map=data_map,
-        methods=['gimme', 'tinit', 'imat', 'fastcore'],
-        # Gene essentiality validation
-        essential_genes=['GAPDH', 'HMGCR', 'PGK1'],
-        non_essential_genes=['BRCA1', 'BRCA2', 'TP53'],
-        # Theoretical yield validation
-        carbon_sources=['glucose', 'acetate', 'glycerol'],
-        biomass_reaction='biomass_human'
-    )
-
-    comparison = runner.run_benchmark(
-        validate_essentiality=True,
-        validate_yields=True
-    )
-
-Features include:
-
-    - Automatic performance metrics (time, memory, model size)
-    - Biological validation (biomass flux, task completion)
-    - Gene essentiality validation (accuracy, precision, recall, F1, MCC)
-    - Theoretical yield calculations (aerobic and anaerobic conditions)
-    - Network quality metrics (consistency, blocked reactions)
-    - Rich visualizations (heatmaps, radar charts, Pareto fronts, confusion matrices)
-    - Automated report generation
-
-**Expression Data with Any Gene ID Nomenclature**
-
-Troppo now supports expression data with any gene ID format, automatically converting to match your model:
-
-::
-
-    from troppo.omics import create_data_map_from_dict
-
-    # Expression data with Entrez IDs (or any other ID type)
-    expression_data = {
-        '2597': 100.5,   # GAPDH (Entrez ID)
-        '3156': 85.2,    # HMGCR (Entrez ID)
-        '5230': 95.8     # PGK1 (Entrez ID)
-    }
-
-    # Automatically converts IDs to match your model
-    data_map = create_data_map_from_dict(
-        expression_data,
-        model_wrapper,
-        gene_id_type='entrez_id',  # or auto-detect if omitted
-        auto_convert=True,
-        verbose=True
-    )
-
-**Multi-Nomenclature Gene ID Support**
-
-Use different ID types for expression data and validation data in the same workflow:
-
-::
-
-    from troppo.omics import create_data_map_from_dict
-    from troppo.benchmark import BenchmarkRunner
-
-    # Expression data: Entrez IDs
-    expression_data = {'2597': 100.5, '3156': 85.2}
-    data_map = create_data_map_from_dict(
-        expression_data,
-        model_wrapper,
-        gene_id_type='entrez_id',
-        auto_convert=True
-    )
-
-    # Benchmark with different ID types for validation
-    runner = BenchmarkRunner(
-        model_wrapper=model_wrapper,
-        data_map=data_map,
-        methods=['gimme', 'tinit', 'imat'],
-        # Essential genes in Ensembl ID format
-        essential_genes=['ENSG00000111640', 'ENSG00000102144'],
-        essential_genes_id_type='ensembl_gene_id',
-        # Non-essential genes in Symbol format
-        non_essential_genes=['HMGCR', 'TP53'],
-        non_essential_genes_id_type='symbol'
-    )
-
-    # All IDs automatically converted to match model
-    comparison = runner.run_benchmark(validate_essentiality=True)
-
-Supported ID types:
-
-    - ``entrez_id`` - NCBI Entrez Gene IDs (e.g., '2597')
-    - ``ensembl_gene_id`` - Ensembl Gene IDs (e.g., 'ENSG00000111640')
-    - ``symbol`` - HGNC Gene Symbols (e.g., 'GAPDH')
-    - ``hgnc_id`` - HGNC IDs (e.g., 'HGNC:4141')
-    - ``uniprot_ids`` - UniProt IDs
-
-Features include:
-
-    - Automatic ID type detection for expression data
-    - Automatic conversion using HGNC database
-    - Support for mixed ID types in single workflow
-    - Works seamlessly with benchmark and validation
-    - Verbose logging of conversion process
-
-**Quick Start**
-
-Basic workflow for omics integration:
-
-::
-
-    from troppo.methods_wrappers import ModelBasedWrapper
-    from troppo.omics import create_data_map_from_dict
-    from troppo.methods.reconstruction.gimme import GIMME, GIMMEProperties
-    import cobra
-
-    # 1. Load metabolic model
-    model = cobra.io.read_sbml_model('path/to/model.xml')
-    model_wrapper = ModelBasedWrapper(model)
-
-    # 2. Prepare expression data (any gene ID format)
-    expression_data = {
-        '2597': 100.5,   # GAPDH
-        '3156': 85.2,    # HMGCR
-        '5230': 95.8     # PGK1
-        # ... more genes
-    }
-
-    # 3. Create data map (automatic ID conversion)
-    data_map = create_data_map_from_dict(
-        expression_data,
-        model_wrapper,
-        gene_id_type='entrez_id',
-        auto_convert=True
-    )
-
-    # 4. Run tissue-specific reconstruction
-    properties = GIMMEProperties(
-        exp_vector=list(data_map.get_scores().values()),
-        obj_frac=0.9
-    )
-
-    gimme = GIMME(
-        S=model_wrapper.S,
-        lb=model_wrapper.lb,
-        ub=model_wrapper.ub,
-        properties=properties
-    )
-
-    result = gimme.run()
-
-**Tutorials and Examples**
-
-    - ``tests/Troppo_tutorial_omics_integration.ipynb`` - Comprehensive omics integration tutorial
-    - ``tests/Troppo_tutorial_benchmark.ipynb`` - Method comparison and benchmarking
-    - ``examples/custom_method_example.py`` - Complete custom method implementation
-    - ``examples/benchmark_with_validation_example.py`` - Gene essentiality and yield validation
-    - ``examples/benchmark_with_entrez_ids_example.py`` - Using Entrez IDs in benchmarks
-    - ``examples/expression_data_with_entrez_ids.py`` - Expression data with different ID types
-    - ``run_omics_integration.sh`` - Automated pipeline script
-
-**Documentation**
-
-    - ``OMICS_INTEGRATION_GUIDE.md`` - User guide for omics integration
-    - ``EXTENSIBILITY_GUIDE.md`` - Developer guide for extending Troppo
-
-Instalation from PyPI (stable releases)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
+From PyPI (stable)::
 
     pip install troppo
 
-Instalation from github (latest development release)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
+From GitHub (latest)::
 
     pip install git+https://github.com/BioSystemsUM/troppo.git
+
+Dependencies::
+
+    cobamp==0.2.1
+    cobra==0.24.0
+    numpy
+    pandas
+    matplotlib
 
 Usage
 ~~~~~
 
-**Using Expression Data with Different Gene IDs**
+**Basic Reconstruction**
 
-Troppo makes it easy to work with expression data in any gene ID format:
+::
 
-Method 1 - Direct from dictionary (simplest)::
+    from troppo import TINITReconstructor
 
-    from troppo.omics import create_data_map_from_dict
-
-    expression_data = {'2597': 100.5, '3156': 85.2}  # Entrez IDs
-    data_map = create_data_map_from_dict(
-        expression_data,
-        model_wrapper,
-        gene_id_type='entrez_id',
-        auto_convert=True
+    recon = TINITReconstructor(
+        model_path="Human-GEM.xml",
+        expression_path="expression_data.csv",
+        solver="CPLEX"
     )
 
-Method 2 - Using OmicsContainer::
+    # Preview data before running
+    recon.preview_data()
 
-    from troppo.omics import OmicsContainer, create_compatible_data_map
-
-    omics_container = OmicsContainer(
-        omicstype='transcriptomics',
-        condition='sample1',
-        data=expression_data,
-        nomenclature='entrez_id'
+    # Configure tINIT parameters
+    recon.configure(
+        score_integration="adjusted",
+        essential_reactions=["biomass_human"],
+        and_func=min,
+        or_func=max
     )
 
-    data_map = create_compatible_data_map(
-        omics_container,
-        model_wrapper,
-        auto_convert=True
+    # Run reconstruction
+    results = recon.run()
+
+**Analyzing Results**
+
+::
+
+    # Summary statistics
+    results.summary()
+
+    # Per-sample analysis
+    active = results.get_active_reactions("sample1")
+    common = results.get_common_reactions()
+    unique = results.get_unique_reactions("sample1")
+
+    # Cross-sample comparison
+    results.jaccard_similarity()
+    results.subsystem_coverage()
+    results.biomass_fluxes()
+
+    # Get a COBRA model for a specific sample
+    model = results.get_model("sample1")
+
+**Visualization**
+
+::
+
+    from troppo.visualization import (
+        plot_model_sizes,
+        plot_reaction_overlap_heatmap,
+        plot_subsystem_coverage,
+        plot_overview
     )
 
-**Running Benchmarks**
+    # Individual plots
+    fig = plot_reaction_overlap_heatmap(results)
+    fig.savefig("jaccard_heatmap.pdf", dpi=300, bbox_inches="tight")
 
-Compare multiple methods with automatic validation::
+    # Composite overview (2x3 subplots)
+    plot_overview(results, save_dir="figures/", format="pdf")
 
-    from troppo.benchmark import BenchmarkRunner
+**Validation**
 
-    runner = BenchmarkRunner(
-        model_wrapper=model_wrapper,
-        data_map=data_map,
-        methods=['gimme', 'fastcore', 'imat'],
-        essential_genes=['GAPDH', 'PGK1'],
-        carbon_sources=['glucose', 'acetate']
+::
+
+    # Gene essentiality
+    ess_result = results.validate_gene_essentiality(
+        essential_genes=["GAPDH", "PGK1"],
+        non_essential_genes=["BRCA1", "TP53"]
     )
 
-    comparison = runner.run_benchmark(
-        validate_essentiality=True,
-        validate_yields=True
+    # Theoretical yields
+    yield_result = results.validate_theoretical_yields(
+        substrate="glucose",
+        product="biomass"
     )
 
-    # View results
-    summary = comparison.get_summary_dataframe()
-    print(summary)
+**Working with Gene IDs**
 
-**Troubleshooting Common Issues**
+Troppo automatically detects and converts gene IDs::
 
-ID mismatch between expression data and model?
-    Use ``auto_convert=True`` when creating data map
+    from troppo.io import detect_gene_id_type, convert_gene_ids
 
-Want to check what ID type your data uses?::
+    # Auto-detect ID type
+    id_type = detect_gene_id_type(["2597", "3156", "5230"])
+    # Returns: "entrez_id"
 
-    from troppo.omics import detect_expression_data_id_type
-    id_type = detect_expression_data_id_type(expression_data)
+    # Convert between nomenclatures
+    mapping = convert_gene_ids(
+        ids=["2597", "3156"],
+        from_type="entrez_id",
+        to_type="symbol"
+    )
 
-Need to convert IDs manually?::
+When using ``TINITReconstructor``, set ``gene_id_type="auto"`` (default) to
+let Troppo detect and convert IDs automatically::
 
-    omics_container.convertIds('symbol')  # Convert to gene symbols
+    recon = TINITReconstructor(
+        model_path="Human-GEM.xml",
+        expression_path="expression_data.csv",
+        gene_id_type="auto"  # auto-detect and convert
+    )
 
-For more details, see ``OMICS_INTEGRATION_GUIDE.md``
+**Saving and Loading Results**
+
+::
+
+    # Save results
+    results.save("my_results.pkl")
+    results.to_csv("reaction_matrix.csv")
+    results.to_sbml("models/")
+
+    # Load results
+    from troppo import ReconstructionResults
+    results = ReconstructionResults.load("my_results.pkl")
+
+API Reference
+~~~~~~~~~~~~~
+
+**Core Classes**
+
+    - ``troppo.TINITReconstructor`` - Main pipeline class
+    - ``troppo.ReconstructionResults`` - Result container with analysis methods
+
+**I/O Functions**
+
+    - ``troppo.io.load_expression_csv()`` - Load CSV/TSV expression data
+    - ``troppo.io.load_model()`` - Load SBML/JSON metabolic models
+    - ``troppo.io.detect_gene_id_type()`` - Detect gene ID nomenclature
+    - ``troppo.io.convert_gene_ids()`` - Convert between gene ID types
+
+**Visualization Functions**
+
+    - ``troppo.visualization.plot_model_sizes()`` - Active reactions per sample
+    - ``troppo.visualization.plot_reaction_overlap_heatmap()`` - Jaccard similarity heatmap
+    - ``troppo.visualization.plot_subsystem_coverage()`` - Subsystem activation heatmap
+    - ``troppo.visualization.plot_biomass_distribution()`` - Biomass flux distribution
+    - ``troppo.visualization.plot_pca_models()`` - PCA of reaction composition
+    - ``troppo.visualization.plot_essentiality_metrics()`` - ROC curve and confusion matrix
+    - ``troppo.visualization.plot_yield_comparison()`` - Predicted vs experimental yields
+    - ``troppo.visualization.plot_reaction_frequency()`` - Reaction activation frequency
+    - ``troppo.visualization.plot_overview()`` - Composite 2x3 report figure
+
+Examples
+~~~~~~~~
+
+    - ``examples/quick_start.py`` - Minimal usage (5 lines)
+    - ``examples/multi_sample_analysis.py`` - Multi-sample analysis with visualization
 
 Credits and License
 ~~~~~~~~~~~~~~~~~~~
 
-Developed at the Centre of Biological Engineering, University of Minho
+Developed at the Centre of Biological Engineering, University of Minho.
 
 Released under the GNU Public License (version 3.0).
 
