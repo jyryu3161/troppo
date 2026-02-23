@@ -24,3 +24,8 @@ troppo_env/
 venv/
 .venv/
 env/
+
+# Generated results, docs, and papers
+**/covid19_tinit_results/
+docs/
+*.pdf

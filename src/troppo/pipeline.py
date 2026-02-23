@@ -332,6 +332,185 @@ class TINITReconstructor:
             warnings.warn(f"Gene ID conversion failed: {e}")
             return expression_dict
 
+    def _load_tasks(self, task_file: str) -> list:
+        """task 파일을 로드한다. .xlsx/.xls → ExcelTaskIO, .json → JSONTaskIO.
+
+        Parameters
+        ----------
+        task_file : str
+            Task 파일 경로.
+
+        Returns
+        -------
+        list of Task
+        """
+        from troppo.tasks.task_io import ExcelTaskIO, JSONTaskIO
+
+        ext = task_file.lower().rsplit('.', 1)[-1]
+        if ext in ('xlsx', 'xls'):
+            tasks = ExcelTaskIO().read_task(task_file)
+        elif ext == 'json':
+            tasks = JSONTaskIO().read_task(task_file)
+        else:
+            raise ValueError(
+                f"Unsupported task file format: .{ext} (supported: .xlsx, .xls, .json)"
+            )
+        if self.verbose:
+            print(f"  Loaded {len(tasks)} tasks from {task_file}")
+        return tasks
+
+    def _get_medium_reaction_ids(self) -> set:
+        """모델에서 열려있는 exchange 반응 ID를 반환한다.
+
+        Exchange 반응 판별 기준:
+        - 반응 ID가 'EX_'로 시작하거나,
+        - 단일 metabolite 반응이면서 lower_bound < 0 (uptake 가능)
+
+        Returns
+        -------
+        set of str
+            Medium에 포함된 반응 ID 집합.
+        """
+        medium_rxn_ids = set()
+        for rxn in self._model.reactions:
+            is_exchange = rxn.id.startswith('EX_') or (
+                len(rxn.metabolites) == 1 and rxn.lower_bound < 0
+            )
+            if is_exchange and rxn.lower_bound < 0:
+                medium_rxn_ids.add(rxn.id)
+        if self.verbose:
+            print(f"  Identified {len(medium_rxn_ids)} open exchange reactions (medium)")
+        return medium_rxn_ids
+
+    def _identify_medium_related_tasks(self, tasks: list, medium_rxn_ids: set) -> set:
+        """배지 조건 반응과 관련된 task 이름을 반환한다.
+
+        판별 기준:
+        - task.inflow_dict 의 metabolite ID가 medium exchange 반응의 metabolite와 매칭되거나
+        - task.flux_constraints 에 medium exchange 반응 ID가 포함된 경우
+
+        Parameters
+        ----------
+        tasks : list of Task
+        medium_rxn_ids : set of str
+
+        Returns
+        -------
+        set of str
+            배지-연관 task 이름 집합.
+        """
+        medium_metabolites = set()
+        for rxn in self._model.reactions:
+            if rxn.id in medium_rxn_ids:
+                for met in rxn.metabolites:
+                    medium_metabolites.add(met.id)
+                    # compartment 제거 버전도 추가 (e.g. 'glc__D_e' → 'glc__D')
+                    if '_' in met.id:
+                        medium_metabolites.add(met.id.rsplit('_', 1)[0])
+
+        medium_related = set()
+        for task in tasks:
+            inflow_mets = set(task.inflow_dict.keys())
+            if inflow_mets & medium_metabolites:
+                medium_related.add(task.name)
+                continue
+            if set(task.flux_constraints.keys()) & medium_rxn_ids:
+                medium_related.add(task.name)
+
+        if self.verbose:
+            print(f"  Medium-related tasks: {len(medium_related)}/{len(tasks)}")
+        return medium_related
+
+    def _build_bound_changes(self, result_dict: dict) -> dict:
+        """비활성 반응을 (0, 0)으로 설정한 bound_changes 딕셔너리를 생성한다.
+
+        TaskEvaluator.batch_evaluate()의 bound_changes 리스트의 각 원소 형태.
+        활성 반응은 포함하지 않아 원래 bounds를 유지한다.
+
+        Parameters
+        ----------
+        result_dict : dict
+            {reaction_id: bool} - tINIT reconstruction 결과.
+
+        Returns
+        -------
+        dict
+            {reaction_id: (0.0, 0.0)} for inactive reactions.
+        """
+        return {
+            rxn.id: (0.0, 0.0)
+            for rxn in self._model.reactions
+            if not result_dict.get(rxn.id, False)
+        }
+
+    def _validate_tasks_for_sample(
+        self,
+        sample_name: str,
+        result_dict: dict,
+        tasks: list,
+        medium_related_names: set,
+    ):
+        """단일 샘플에 대한 metabolic task 검증을 수행한다.
+
+        Parameters
+        ----------
+        sample_name : str
+        result_dict : dict
+            {reaction_id: bool} - tINIT reconstruction 결과.
+        tasks : list of Task
+        medium_related_names : set of str
+            배지-연관 task 이름 집합.
+
+        Returns
+        -------
+        TaskValidationResult
+        """
+        from troppo.tasks.core import TaskEvaluator, TaskValidationResult
+
+        if self.verbose:
+            print(f"    Validating {len(tasks)} tasks for {sample_name}...")
+
+        tev = TaskEvaluator(model=self._model, tasks=tasks)
+        bound_changes = [self._build_bound_changes(result_dict)]
+
+        raw_results = tev.batch_evaluate(bound_changes=bound_changes, threads=1)
+
+        results = {
+            task_name: truth
+            for (_, task_name), (truth, _, _) in raw_results[0].items()
+        }
+
+        return TaskValidationResult(
+            sample_name=sample_name,
+            results=results,
+            medium_related=medium_related_names,
+        )
+
+    def _print_task_report(self, tvr) -> None:
+        """콘솔에 task 검증 요약 리포트를 출력한다.
+
+        Parameters
+        ----------
+        tvr : TaskValidationResult
+        """
+        sep = "─" * 52
+        print(f"\n    {sep}")
+        print(f"    Task Validation: {tvr.sample_name}")
+        print(f"    {sep}")
+        print(f"    Tasks evaluated : {tvr.total}")
+        if tvr.total > 0:
+            print(f"    Passed          : {tvr.passed}/{tvr.total} "
+                  f"({tvr.passed / tvr.total * 100:.1f}%)")
+        if tvr.medium_total > 0:
+            print(f"    Medium-related  : {tvr.medium_passed}/{tvr.medium_total} "
+                  f"({tvr.medium_passed / tvr.medium_total * 100:.1f}%)")
+        if tvr.failed_tasks:
+            print(f"    Failed tasks:")
+            for task_name in sorted(tvr.failed_tasks):
+                tag = " [MEDIUM-RELATED]" if task_name in tvr.medium_related else ""
+                print(f"      - {task_name}{tag}")
+        print(f"    {sep}")
+
     def _run_single_sample(self, sample_name: str, expression_dict: dict) -> dict:
         """Run tINIT reconstruction for a single sample.
 
@@ -429,12 +608,32 @@ class TINITReconstructor:
         else:
             selected = all_samples
 
+        if validate_tasks and not task_file:
+            raise ValueError(
+                "task_file must be provided when validate_tasks=True. "
+                "Example: run(validate_tasks=True, task_file='metabolicTasks_Essential.xlsx')"
+            )
+
         if self.verbose:
             print(f"\nRunning tINIT reconstruction for {len(selected)} samples "
                   f"(solver={self.solver})...")
 
+        # Prepare tasks if validation is requested
+        tasks = None
+        medium_related_names = set()
+        if validate_tasks:
+            tasks = self._load_tasks(task_file)
+            medium_rxn_ids = self._get_medium_reaction_ids()
+            medium_related_names = self._identify_medium_related_tasks(tasks, medium_rxn_ids)
+            if not medium_related_names and self.verbose:
+                warnings.warn(
+                    "No medium-related tasks identified. "
+                    "Check that task inflow metabolites match model exchange reaction metabolites."
+                )
+
         # Run per sample
         results_dict = {}
+        task_results = {}
         for i, sample in enumerate(selected):
             expression_dict = self._expression_df[sample].dropna().to_dict()
             # Ensure keys are strings
@@ -445,6 +644,15 @@ class TINITReconstructor:
             if self.verbose:
                 n_active = sum(1 for v in result.values() if v)
                 print(f"    [{i+1}/{len(selected)}] {sample}: {n_active} active reactions")
+
+            # Task validation immediately after reconstruction
+            if validate_tasks and tasks:
+                tvr = self._validate_tasks_for_sample(
+                    sample, result, tasks, medium_related_names
+                )
+                task_results[sample] = tvr
+                if self.verbose:
+                    self._print_task_report(tvr)
 
         # Build metadata
         metadata = {
@@ -461,6 +669,7 @@ class TINITReconstructor:
             results_dict=results_dict,
             model=self._model,
             metadata=metadata,
+            task_results=task_results if task_results else None,
         )
 
         if self.verbose:

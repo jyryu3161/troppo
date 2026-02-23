@@ -30,10 +30,12 @@ class ReconstructionResults:
         results_dict: Dict[str, Dict[str, bool]],
         model,
         metadata: dict = None,
+        task_results: dict = None,
     ):
         # Store model reference
         self._model = model
         self._metadata = metadata or {}
+        self._task_results = task_results or {}
 
         # Build reaction matrix (samples x reactions boolean DataFrame)
         self._reaction_matrix = pd.DataFrame(results_dict).T
@@ -411,6 +413,59 @@ class ReconstructionResults:
         """
         with open(path, "rb") as f:
             return pickle.load(f)
+
+    # ------------------------------------------------------------------
+    # Task validation results
+    # ------------------------------------------------------------------
+
+    @property
+    def task_matrix(self) -> pd.DataFrame:
+        """samples × tasks boolean DataFrame.
+
+        Returns an empty DataFrame if task validation was not performed.
+        """
+        if not self._task_results:
+            return pd.DataFrame()
+        return pd.DataFrame(
+            {s: tvr.to_series() for s, tvr in self._task_results.items()}
+        ).T
+
+    @property
+    def medium_related_tasks(self) -> list:
+        """배지-연관 task 이름 목록 (알파벳 순 정렬).
+
+        Returns an empty list if task validation was not performed.
+        """
+        if not self._task_results:
+            return []
+        first = next(iter(self._task_results.values()))
+        return sorted(first.medium_related)
+
+    def task_summary(self) -> pd.DataFrame:
+        """샘플별 task 통과율 요약 DataFrame.
+
+        Returns
+        -------
+        pd.DataFrame
+            Columns: total_tasks, passed, pass_rate, medium_tasks,
+            medium_passed, medium_pass_rate. Indexed by sample name.
+        """
+        if not self._task_results:
+            return pd.DataFrame()
+        rows = []
+        for s, tvr in self._task_results.items():
+            rows.append({
+                'sample': s,
+                'total_tasks': tvr.total,
+                'passed': tvr.passed,
+                'pass_rate': round(tvr.passed / max(tvr.total, 1) * 100, 1),
+                'medium_tasks': tvr.medium_total,
+                'medium_passed': tvr.medium_passed,
+                'medium_pass_rate': round(
+                    tvr.medium_passed / max(tvr.medium_total, 1) * 100, 1
+                ),
+            })
+        return pd.DataFrame(rows).set_index('sample')
 
     # ------------------------------------------------------------------
     # Dunder methods

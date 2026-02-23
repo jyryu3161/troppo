@@ -725,6 +725,55 @@ class TaskEvaluator(object):
         self.model.add_reactions(**add_rx_args)
 
 
+class TaskValidationResult:
+    """단일 샘플의 metabolic task 검증 결과 컨테이너.
+
+    Parameters
+    ----------
+    sample_name : str
+        샘플 이름.
+    results : dict
+        {task_name: bool} 형태의 task별 pass/fail 결과.
+    medium_related : set
+        배지(medium) 조건과 관련된 task 이름 집합.
+    """
+
+    def __init__(self, sample_name: str, results: dict, medium_related: set):
+        self.sample_name = sample_name
+        self.results = results
+        self.medium_related = medium_related
+
+    @property
+    def total(self) -> int:
+        """전체 task 수."""
+        return len(self.results)
+
+    @property
+    def passed(self) -> int:
+        """통과한 task 수."""
+        return sum(1 for v in self.results.values() if v)
+
+    @property
+    def failed_tasks(self) -> list:
+        """실패한 task 이름 목록."""
+        return [k for k, v in self.results.items() if not v]
+
+    @property
+    def medium_passed(self) -> int:
+        """통과한 배지-연관 task 수."""
+        return sum(1 for k, v in self.results.items() if k in self.medium_related and v)
+
+    @property
+    def medium_total(self) -> int:
+        """배지-연관 task 전체 수."""
+        return len(self.medium_related)
+
+    def to_series(self):
+        """결과를 pandas Series로 반환한다."""
+        import pandas as pd
+        return pd.Series(self.results, name=self.sample_name)
+
+
 if __name__ == '__main__':
     from numpy import array
 
