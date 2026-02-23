@@ -1,0 +1,11 @@
+sample,n_active_reactions,n_total_reactions,pct_retained
+Lung_Healthy,6391,10348,61.8
+Lung_COVID19,6410,10348,61.9
+Heart_Healthy,5982,10348,57.8
+Heart_COVID19,5832,10348,56.4
+Liver_Healthy,6495,10348,62.8
+Liver_COVID19,6534,10348,63.1
+Kidney_Healthy,6355,10348,61.4
+Kidney_COVID19,0,10348,0.0
+Intestine_Healthy,6612,10348,63.9
+Intestine_COVID19,6312,10348,61.0

@@ -1,0 +1,5 @@
+wt_growth,num_model_genes,num_tested,num_predicted_essential,pct_essential,sample,group,tissue,accuracy,precision,recall,f1_score,specificity,matthews_correlation,num_experimental_essential,tp,fp,tn,fn
+11.046585842981006,2725.0,2725,188,6.89908256880734,Lung_Healthy,Healthy,Lung,,,,,,,,,,,
+0.0,,0,0,,Heart_Healthy,Healthy,Heart,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+11.046585842981035,2709.0,2709,189,6.976744186046512,Lung_COVID19,COVID19,Lung,,,,,,,,,,,
+0.0,,0,0,,Heart_COVID19,COVID19,Heart,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0

@@ -411,10 +411,20 @@ class tINIT(ContextSpecificModelReconstructionAlgorithm):
 			problem.model.problem.parameters.mip.tolerances.mipgap.set(1e-3)
 		elif self.properties['solver'] == 'GUROBI':
 			problem.model.problem.Params.MIPGap = 1e-3
+			problem.model.problem.Params.TimeLimit = 900  # 15 min per sample
 
-		problem.model.configuration.tolerances.feasibility = 1e-8
-		problem.model.configuration.tolerances.optimality = 1e-8
-		problem.model.configuration.verbosity = 0
+		try:
+			problem.model.configuration.tolerances.feasibility = 1e-8
+		except Exception:
+			pass
+		try:
+			problem.model.configuration.tolerances.optimality = 1e-8
+		except Exception:
+			pass
+		try:
+			problem.model.configuration.verbosity = 0
+		except Exception:
+			pass
 
 		lso = LinearSystemOptimizer(problem)
 		if self.present_metabolites_unlisted.size > 0:
@@ -473,6 +483,9 @@ class tINIT(ContextSpecificModelReconstructionAlgorithm):
 		self.preprocessing()
 		self.build_problem()
 		res = self.solve_problem()
+		if res is None:
+			# Return empty array if infeasible or failed
+			return np.array([], dtype=int)
 		return np.unique(np.int_(np.sort(res)))
 
 	def run(self) -> np.array:

@@ -1,0 +1,11 @@
+carbon_source,aerobic,theoretical_yield,biomass_yield,substrate_uptake,product_formation,oxygen_uptake,co2_production,feasible,optimal,sample,group,tissue
+glucose,True,1.1046585842981083,1.1046585842981083,10.0,11.046585842981083,593.7583367330503,593.2249126826118,True,True,Lung_Healthy,Healthy,Lung
+glucose,True,1.1046585842981012,1.1046585842981012,10.0,11.046585842981012,1000.0,232.25478935753773,True,True,Lung_COVID19,COVID19,Lung
+glucose,True,0.0,0.0,10.0,0.0,0.0,0.0,True,True,Heart_Healthy,Healthy,Heart
+glucose,True,0.0,0.0,10.0,0.0,0.0,0.0,True,True,Heart_COVID19,COVID19,Heart
+glucose,True,1.1046585842981023,1.1046585842981023,10.0,11.046585842981022,1000.0,916.8276629710871,True,True,Liver_Healthy,Healthy,Liver
+glucose,True,0.0,0.0,10.0,0.0,0.0,0.0,True,True,Liver_COVID19,COVID19,Liver
+glucose,True,0.0,0.0,10.0,0.0,0.0,0.0,True,True,Kidney_Healthy,Healthy,Kidney
+glucose,True,0.0,0.0,0.0,0.0,0.0,0.0,False,False,Kidney_COVID19,COVID19,Kidney
+glucose,True,0.0,0.0,10.0,0.0,5.0,0.0,True,True,Intestine_Healthy,Healthy,Intestine
+glucose,True,0.0,0.0,10.0,0.0,0.0,0.0,True,True,Intestine_COVID19,COVID19,Intestine

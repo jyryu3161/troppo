@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" xmlns:fbc="http://www.sbml.org/sbml/level3/version1/fbc/version2" xmlns:groups="http://www.sbml.org/sbml/level3/version1/groups/version1" metaid="meta_" sboTerm="SBO:0000624" level="3" version="1" fbc:required="false" groups:required="false">
+  <model metaid="meta_HumanGEM" id="HumanGEM" name="Generic genome-scale metabolic model of Homo sapiens" fbc:strict="true">
+    <annotation>
+      <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:vCard="http://www.w3.org/2001/vcard-rdf/3.0#" xmlns:vCard4="http://www.w3.org/2006/vcard/ns#" xmlns:bqbiol="http://biomodels.net/biology-qualifiers/" xmlns:bqmodel="http://biomodels.net/model-qualifiers/">
+        <rdf:Description rdf:about="#meta_HumanGEM">
+          <bqbiol:is>
+            <rdf:Bag>
+              <rdf:li rdf:resource="https://identifiers.org/taxonomy/9606"/>
+            </rdf:Bag>
+          </bqbiol:is>
+        </rdf:Description>
+      </rdf:RDF>
+    </annotation>
+    <listOfUnitDefinitions>
+      <unitDefinition id="mmol_per_gDW_per_hr">
+        <listOfUnits>
+          <unit kind="mole" exponent="1" scale="-3" multiplier="1"/>
+          <unit kind="gram" exponent="-1" scale="0" multiplier="1"/>
+          <unit kind="second" exponent="-1" scale="0" multiplier="3600"/>
+        </listOfUnits>
+      </unitDefinition>
+    </listOfUnitDefinitions>
+    <listOfParameters>
+      <parameter sboTerm="SBO:0000626" id="cobra_default_lb" value="-1000" constant="true"/>
+      <parameter sboTerm="SBO:0000626" id="cobra_default_ub" value="1000" constant="true"/>
+      <parameter sboTerm="SBO:0000626" id="cobra_0_bound" value="0" constant="true"/>
+      <parameter sboTerm="SBO:0000626" id="minus_inf" value="-INF" constant="true"/>
+      <parameter sboTerm="SBO:0000626" id="plus_inf" value="INF" constant="true"/>
+    </listOfParameters>
+    <fbc:listOfObjectives fbc:activeObjective="obj">
+      <fbc:objective fbc:id="obj" fbc:type="maximize"/>
+    </fbc:listOfObjectives>
+    <groups:listOfGroups>
+      <groups:group metaid="meta_G_group1" sboTerm="SBO:0000633" groups:id="G_group1" groups:name="Acyl-CoA hydrolysis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group2" sboTerm="SBO:0000633" groups:id="G_group2" groups:name="Acylglycerides metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group3" sboTerm="SBO:0000633" groups:id="G_group3" groups:name="Alanine, aspartate and glutamate metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group4" sboTerm="SBO:0000633" groups:id="G_group4" groups:name="Alkaloids biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group5" sboTerm="SBO:0000633" groups:id="G_group5" groups:name="Amino sugar and nucleotide sugar metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group6" sboTerm="SBO:0000633" groups:id="G_group6" groups:name="Aminoacyl-tRNA biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group7" sboTerm="SBO:0000633" groups:id="G_group7" groups:name="Androgen metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group8" sboTerm="SBO:0000633" groups:id="G_group8" groups:name="Arachidonic acid metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group9" sboTerm="SBO:0000633" groups:id="G_group9" groups:name="Arginine and proline metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group10" sboTerm="SBO:0000633" groups:id="G_group10" groups:name="Artificial reactions" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group11" sboTerm="SBO:0000633" groups:id="G_group11" groups:name="Ascorbate and aldarate metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group12" sboTerm="SBO:0000633" groups:id="G_group12" groups:name="Beta oxidation of branched-chain fatty acids (mitochondrial)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group13" sboTerm="SBO:0000633" groups:id="G_group13" groups:name="Beta oxidation of di-unsaturated fatty acids (n-6) (mitochondrial)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group14" sboTerm="SBO:0000633" groups:id="G_group14" groups:name="Beta oxidation of di-unsaturated fatty acids (n-6) (peroxisomal)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group15" sboTerm="SBO:0000633" groups:id="G_group15" groups:name="Beta oxidation of even-chain fatty acids (mitochondrial)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group16" sboTerm="SBO:0000633" groups:id="G_group16" groups:name="Beta oxidation of even-chain fatty acids (peroxisomal)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group17" sboTerm="SBO:0000633" groups:id="G_group17" groups:name="Beta oxidation of odd-chain fatty acids (mitochondrial)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group18" sboTerm="SBO:0000633" groups:id="G_group18" groups:name="Beta oxidation of odd-chain fatty acids (peroxisomal)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group19" sboTerm="SBO:0000633" groups:id="G_group19" groups:name="Beta oxidation of phytanic acid (peroxisomal)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group20" sboTerm="SBO:0000633" groups:id="G_group20" groups:name="Beta oxidation of poly-unsaturated fatty acids (mitochondrial)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group21" sboTerm="SBO:0000633" groups:id="G_group21" groups:name="Beta oxidation of unsaturated fatty acids (n-7) (mitochondrial)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group22" sboTerm="SBO:0000633" groups:id="G_group22" groups:name="Beta oxidation of unsaturated fatty acids (n-7) (peroxisomal)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group23" sboTerm="SBO:0000633" groups:id="G_group23" groups:name="Beta oxidation of unsaturated fatty acids (n-9) (mitochondrial)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group24" sboTerm="SBO:0000633" groups:id="G_group24" groups:name="Beta oxidation of unsaturated fatty acids (n-9) (peroxisomal)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group25" sboTerm="SBO:0000633" groups:id="G_group25" groups:name="Beta-alanine metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group26" sboTerm="SBO:0000633" groups:id="G_group26" groups:name="Bile acid biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group27" sboTerm="SBO:0000633" groups:id="G_group27" groups:name="Bile acid recycling" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group28" sboTerm="SBO:0000633" groups:id="G_group28" groups:name="Biopterin metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group29" sboTerm="SBO:0000633" groups:id="G_group29" groups:name="Biotin metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group30" sboTerm="SBO:0000633" groups:id="G_group30" groups:name="Blood group biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group31" sboTerm="SBO:0000633" groups:id="G_group31" groups:name="Butanoate metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group32" sboTerm="SBO:0000633" groups:id="G_group32" groups:name="C5-branched dibasic acid metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group33" sboTerm="SBO:0000633" groups:id="G_group33" groups:name="Carnitine shuttle (cytosolic)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group34" sboTerm="SBO:0000633" groups:id="G_group34" groups:name="Carnitine shuttle (endoplasmic reticular)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group35" sboTerm="SBO:0000633" groups:id="G_group35" groups:name="Carnitine shuttle (mitochondrial)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group36" sboTerm="SBO:0000633" groups:id="G_group36" groups:name="Carnitine shuttle (peroxisomal)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group37" sboTerm="SBO:0000633" groups:id="G_group37" groups:name="Cholesterol biosynthesis 1 (Bloch pathway) " groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group38" sboTerm="SBO:0000633" groups:id="G_group38" groups:name="Cholesterol biosynthesis 2" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group39" sboTerm="SBO:0000633" groups:id="G_group39" groups:name="Cholesterol biosynthesis 3 (Kandustch-Russell pathway)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group40" sboTerm="SBO:0000633" groups:id="G_group40" groups:name="Cholesterol metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group41" sboTerm="SBO:0000633" groups:id="G_group41" groups:name="Chondroitin / heparan sulfate biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group42" sboTerm="SBO:0000633" groups:id="G_group42" groups:name="Chondroitin sulfate degradation" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group43" sboTerm="SBO:0000633" groups:id="G_group43" groups:name="CoA catabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group44" sboTerm="SBO:0000633" groups:id="G_group44" groups:name="CoA synthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group45" sboTerm="SBO:0000633" groups:id="G_group45" groups:name="Cysteine and methionine metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group46" sboTerm="SBO:0000633" groups:id="G_group46" groups:name="Dietary fiber binding" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group47" sboTerm="SBO:0000633" groups:id="G_group47" groups:name="Drug metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group48" sboTerm="SBO:0000633" groups:id="G_group48" groups:name="Eicosanoid metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group49" sboTerm="SBO:0000633" groups:id="G_group49" groups:name="Estrogen metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group50" sboTerm="SBO:0000633" groups:id="G_group50" groups:name="Ether lipid metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group51" sboTerm="SBO:0000633" groups:id="G_group51" groups:name="Exchange/demand reactions" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group52" sboTerm="SBO:0000633" groups:id="G_group52" groups:name="Fatty acid activation (cytosolic)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group53" sboTerm="SBO:0000633" groups:id="G_group53" groups:name="Fatty acid activation (endoplasmic reticular)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group54" sboTerm="SBO:0000633" groups:id="G_group54" groups:name="Fatty acid biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group55" sboTerm="SBO:0000633" groups:id="G_group55" groups:name="Fatty acid biosynthesis (even-chain)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group56" sboTerm="SBO:0000633" groups:id="G_group56" groups:name="Fatty acid biosynthesis (odd-chain)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group57" sboTerm="SBO:0000633" groups:id="G_group57" groups:name="Fatty acid biosynthesis (unsaturated)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group58" sboTerm="SBO:0000633" groups:id="G_group58" groups:name="Fatty acid desaturation (even-chain)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group59" sboTerm="SBO:0000633" groups:id="G_group59" groups:name="Fatty acid desaturation (odd-chain)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group60" sboTerm="SBO:0000633" groups:id="G_group60" groups:name="Fatty acid elongation (even-chain)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group61" sboTerm="SBO:0000633" groups:id="G_group61" groups:name="Fatty acid elongation (odd-chain)" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group62" sboTerm="SBO:0000633" groups:id="G_group62" groups:name="Fatty acid oxidation" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group63" sboTerm="SBO:0000633" groups:id="G_group63" groups:name="Folate metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group64" sboTerm="SBO:0000633" groups:id="G_group64" groups:name="Formation and hydrolysis of cholesterol esters" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group65" sboTerm="SBO:0000633" groups:id="G_group65" groups:name="Fructose and mannose metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group66" sboTerm="SBO:0000633" groups:id="G_group66" groups:name="Galactose metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group67" sboTerm="SBO:0000633" groups:id="G_group67" groups:name="Glucocorticoid biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group68" sboTerm="SBO:0000633" groups:id="G_group68" groups:name="Glutathione metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group69" sboTerm="SBO:0000633" groups:id="G_group69" groups:name="Glycerolipid metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group70" sboTerm="SBO:0000633" groups:id="G_group70" groups:name="Glycerophospholipid metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group71" sboTerm="SBO:0000633" groups:id="G_group71" groups:name="Glycine, serine and threonine metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group72" sboTerm="SBO:0000633" groups:id="G_group72" groups:name="Glycolysis / Gluconeogenesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group73" sboTerm="SBO:0000633" groups:id="G_group73" groups:name="Glycosphingolipid biosynthesis-ganglio series" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group74" sboTerm="SBO:0000633" groups:id="G_group74" groups:name="Glycosphingolipid biosynthesis-globo series" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group75" sboTerm="SBO:0000633" groups:id="G_group75" groups:name="Glycosphingolipid biosynthesis-lacto and neolacto series" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group76" sboTerm="SBO:0000633" groups:id="G_group76" groups:name="Glycosphingolipid metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group77" sboTerm="SBO:0000633" groups:id="G_group77" groups:name="Glycosylphosphatidylinositol (GPI)-anchor biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group78" sboTerm="SBO:0000633" groups:id="G_group78" groups:name="Heme degradation" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group79" sboTerm="SBO:0000633" groups:id="G_group79" groups:name="Heme synthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group80" sboTerm="SBO:0000633" groups:id="G_group80" groups:name="Heparan sulfate degradation" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group81" sboTerm="SBO:0000633" groups:id="G_group81" groups:name="Hippurate metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group82" sboTerm="SBO:0000633" groups:id="G_group82" groups:name="Histidine metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group83" sboTerm="SBO:0000633" groups:id="G_group83" groups:name="Inositol phosphate metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group84" sboTerm="SBO:0000633" groups:id="G_group84" groups:name="Isolated" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group85" sboTerm="SBO:0000633" groups:id="G_group85" groups:name="Keratan sulfate biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group86" sboTerm="SBO:0000633" groups:id="G_group86" groups:name="Keratan sulfate degradation" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group87" sboTerm="SBO:0000633" groups:id="G_group87" groups:name="Leukotriene metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group88" sboTerm="SBO:0000633" groups:id="G_group88" groups:name="Linoleate metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group89" sboTerm="SBO:0000633" groups:id="G_group89" groups:name="Lipoic acid metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group90" sboTerm="SBO:0000633" groups:id="G_group90" groups:name="Lysine metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group91" sboTerm="SBO:0000633" groups:id="G_group91" groups:name="Metabolism of other amino acids" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group92" sboTerm="SBO:0000633" groups:id="G_group92" groups:name="Miscellaneous" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group93" sboTerm="SBO:0000633" groups:id="G_group93" groups:name="N-glycan metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group94" sboTerm="SBO:0000633" groups:id="G_group94" groups:name="Nicotinate and nicotinamide metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group95" sboTerm="SBO:0000633" groups:id="G_group95" groups:name="Nucleotide metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group96" sboTerm="SBO:0000633" groups:id="G_group96" groups:name="O-glycan metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group97" sboTerm="SBO:0000633" groups:id="G_group97" groups:name="Omega-3 fatty acid metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group98" sboTerm="SBO:0000633" groups:id="G_group98" groups:name="Omega-6 fatty acid metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group99" sboTerm="SBO:0000633" groups:id="G_group99" groups:name="Oxidative phosphorylation" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group100" sboTerm="SBO:0000633" groups:id="G_group100" groups:name="Pantothenate and CoA biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group101" sboTerm="SBO:0000633" groups:id="G_group101" groups:name="Pentose and glucuronate interconversions" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group102" sboTerm="SBO:0000633" groups:id="G_group102" groups:name="Pentose phosphate pathway" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group103" sboTerm="SBO:0000633" groups:id="G_group103" groups:name="Peptide metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group104" sboTerm="SBO:0000633" groups:id="G_group104" groups:name="Phenylalanine metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group105" sboTerm="SBO:0000633" groups:id="G_group105" groups:name="Phenylalanine, tyrosine and tryptophan biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group106" sboTerm="SBO:0000633" groups:id="G_group106" groups:name="Phosphatidylinositol phosphate metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group107" sboTerm="SBO:0000633" groups:id="G_group107" groups:name="Pool reactions" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group108" sboTerm="SBO:0000633" groups:id="G_group108" groups:name="Porphyrin metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group109" sboTerm="SBO:0000633" groups:id="G_group109" groups:name="Propanoate metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group110" sboTerm="SBO:0000633" groups:id="G_group110" groups:name="Prostaglandin biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group111" sboTerm="SBO:0000633" groups:id="G_group111" groups:name="Protein assembly" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group112" sboTerm="SBO:0000633" groups:id="G_group112" groups:name="Protein degradation" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group113" sboTerm="SBO:0000633" groups:id="G_group113" groups:name="Protein modification" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group114" sboTerm="SBO:0000633" groups:id="G_group114" groups:name="Purine metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group115" sboTerm="SBO:0000633" groups:id="G_group115" groups:name="Pyrimidine metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group116" sboTerm="SBO:0000633" groups:id="G_group116" groups:name="Pyruvate metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group117" sboTerm="SBO:0000633" groups:id="G_group117" groups:name="ROS detoxification" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group118" sboTerm="SBO:0000633" groups:id="G_group118" groups:name="Retinol metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group119" sboTerm="SBO:0000633" groups:id="G_group119" groups:name="Riboflavin metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group120" sboTerm="SBO:0000633" groups:id="G_group120" groups:name="Serotonin and melatonin biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group121" sboTerm="SBO:0000633" groups:id="G_group121" groups:name="Sphingolipid metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group122" sboTerm="SBO:0000633" groups:id="G_group122" groups:name="Starch and sucrose metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group123" sboTerm="SBO:0000633" groups:id="G_group123" groups:name="Steroid metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group124" sboTerm="SBO:0000633" groups:id="G_group124" groups:name="Sulfur metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group125" sboTerm="SBO:0000633" groups:id="G_group125" groups:name="Terpenoid backbone biosynthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group126" sboTerm="SBO:0000633" groups:id="G_group126" groups:name="Thiamine metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group127" sboTerm="SBO:0000633" groups:id="G_group127" groups:name="Transport reactions" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group128" sboTerm="SBO:0000633" groups:id="G_group128" groups:name="Triacylglycerol synthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group129" sboTerm="SBO:0000633" groups:id="G_group129" groups:name="Tricarboxylic acid cycle and glyoxylate/dicarboxylate metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group130" sboTerm="SBO:0000633" groups:id="G_group130" groups:name="Tryptophan metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group131" sboTerm="SBO:0000633" groups:id="G_group131" groups:name="Tyrosine metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group132" sboTerm="SBO:0000633" groups:id="G_group132" groups:name="Ubiquinone synthesis" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group133" sboTerm="SBO:0000633" groups:id="G_group133" groups:name="Urea cycle" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group134" sboTerm="SBO:0000633" groups:id="G_group134" groups:name="Valine, leucine, and isoleucine metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group135" sboTerm="SBO:0000633" groups:id="G_group135" groups:name="Vitamin A metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group136" sboTerm="SBO:0000633" groups:id="G_group136" groups:name="Vitamin B12 metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group137" sboTerm="SBO:0000633" groups:id="G_group137" groups:name="Vitamin B2 metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group138" sboTerm="SBO:0000633" groups:id="G_group138" groups:name="Vitamin B6 metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group139" sboTerm="SBO:0000633" groups:id="G_group139" groups:name="Vitamin C metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group140" sboTerm="SBO:0000633" groups:id="G_group140" groups:name="Vitamin D metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group141" sboTerm="SBO:0000633" groups:id="G_group141" groups:name="Vitamin E metabolism" groups:kind="partonomy"/>
+      <groups:group metaid="meta_G_group142" sboTerm="SBO:0000633" groups:id="G_group142" groups:name="Xenobiotics metabolism" groups:kind="partonomy"/>
+    </groups:listOfGroups>
+  </model>
+</sbml>

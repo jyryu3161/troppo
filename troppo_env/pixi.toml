@@ -1,0 +1,22 @@
+[workspace]
+authors = ["syjung <jsy960608@gmail.com>"]
+channels = ["conda-forge"]
+name = "troppo_env"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+install-troppo = "pip install git+https://github.com/BioSystemsUM/troppo.git"
+
+[dependencies]
+python = ">=3.9,<3.12"
+pip = "*"
+setuptools = "*"
+numpy = "*"
+pandas = "*"
+matplotlib = "*"
+python-libsbml = "*"
+cobra = "*"
+scikit-learn = ">=1.8.0,<2"
+libstdcxx-ng = ">=15.2.0,<16"
+gcc = ">=15.2.0,<15.3"

@@ -206,6 +206,14 @@ class GeneEssentialityValidator:
 
         wt_growth = wt_solution.objective_value
 
+        if wt_growth < 1e-6:
+            warnings.warn(
+                "Wild-type model has zero growth. Gene essentiality analysis "
+                "requires a growing model. Ensure biomass-related pseudo-reactions "
+                "(e.g., 'biomass_human') are active in the reconstructed model."
+            )
+            return GeneEssentialityResult()
+
         # Perform single gene deletion
         deletion_results = single_gene_deletion(model, method=method)
 
@@ -213,17 +221,39 @@ class GeneEssentialityValidator:
         predicted_essential = set()
         predicted_non_essential = set()
 
+        # Build a lookup from gene_id -> growth for efficient access.
+        # COBRApy versions differ in output format:
+        #   - Older: DataFrame with 'ids' column (frozensets) and 'growth' column
+        #   - Newer: DataFrame with frozenset index and 'growth' column
+        gene_growth_map = {}
+        if 'ids' in deletion_results.columns:
+            for _, row in deletion_results.iterrows():
+                ids = row['ids']
+                growth = row['growth']
+                if isinstance(ids, (frozenset, set)):
+                    for gid in ids:
+                        gene_growth_map[gid] = growth
+                else:
+                    gene_growth_map[str(ids)] = growth
+        else:
+            for idx in deletion_results.index:
+                growth = deletion_results.loc[idx, 'growth']
+                if isinstance(growth, pd.Series):
+                    growth = growth.values[0]
+                if isinstance(idx, (frozenset, set)):
+                    for gid in idx:
+                        gene_growth_map[gid] = growth
+                else:
+                    gene_growth_map[str(idx)] = growth
+
         for gene_id in model.genes:
             gene_id_str = str(gene_id.id)
 
-            # Find deletion result for this gene
-            gene_result = deletion_results[deletion_results['ids'] == gene_id_str]
-
-            if len(gene_result) > 0:
-                growth = gene_result['growth'].values[0]
+            if gene_id_str in gene_growth_map:
+                growth = gene_growth_map[gene_id_str]
 
                 # Check if growth is significantly reduced
-                if growth < self.growth_threshold * wt_growth:
+                if np.isnan(growth) or growth < self.growth_threshold * wt_growth:
                     predicted_essential.add(gene_id_str)
                 else:
                     predicted_non_essential.add(gene_id_str)
@@ -428,14 +458,21 @@ class TheoreticalYieldCalculator:
             warnings.warn(f"Unknown carbon source: {carbon_source}")
             return TheoreticalYieldResult(carbon_source=carbon_source, aerobic=aerobic)
 
-        substrate_id = self.metabolite_mapping[carbon_source]['id']
-        oxygen_id = self.metabolite_mapping['oxygen']['id']
-        co2_id = self.metabolite_mapping['co2']['id']
+        substrate_info = self.metabolite_mapping[carbon_source]
+        oxygen_info = self.metabolite_mapping['oxygen']
+        co2_info = self.metabolite_mapping['co2']
 
-        # Find exchange reactions
-        substrate_exchange = self._find_exchange_reaction(model, substrate_id)
-        oxygen_exchange = self._find_exchange_reaction(model, oxygen_id)
-        co2_exchange = self._find_exchange_reaction(model, co2_id)
+        substrate_id = substrate_info['id']
+        oxygen_id = oxygen_info['id']
+        co2_id = co2_info['id']
+
+        # Find exchange reactions (use explicit exchange IDs from mapping if available)
+        substrate_exchange = self._find_exchange_reaction(
+            model, substrate_id, substrate_info.get('exchange'))
+        oxygen_exchange = self._find_exchange_reaction(
+            model, oxygen_id, oxygen_info.get('exchange'))
+        co2_exchange = self._find_exchange_reaction(
+            model, co2_id, co2_info.get('exchange'))
 
         if substrate_exchange is None:
             warnings.warn(f"No exchange reaction found for {carbon_source}")
@@ -443,14 +480,15 @@ class TheoreticalYieldCalculator:
 
         # Set up model conditions
         with model:
-            # Close all exchange reactions
-            for rxn in model.exchanges:
-                rxn.lower_bound = 0
-                rxn.upper_bound = 1000
+            # Keep existing medium conditions (don't close all exchanges).
+            # Human/mammalian models require many nutrients (amino acids,
+            # vitamins, H2O, etc.) beyond the carbon source being tested.
 
-            # Set substrate uptake
+            # Fix substrate uptake rate to calculate yield.
+            # Both bounds set to the same value forces the model to
+            # consume exactly this amount of substrate.
             substrate_exchange.lower_bound = -self.uptake_rate
-            substrate_exchange.upper_bound = 0
+            substrate_exchange.upper_bound = -self.uptake_rate
 
             # Set oxygen availability
             if aerobic and oxygen_exchange:
@@ -460,7 +498,6 @@ class TheoreticalYieldCalculator:
 
             # Allow CO2 secretion
             if co2_exchange:
-                co2_exchange.lower_bound = -1000
                 co2_exchange.upper_bound = 1000
 
             # Optimize for product
@@ -517,9 +554,24 @@ class TheoreticalYieldCalculator:
                     substrate_id=substrate_id
                 )
 
-    def _find_exchange_reaction(self, model, metabolite_id: str):
-        """Find exchange reaction for a metabolite"""
+    def _find_exchange_reaction(self, model, metabolite_id: str, exchange_id: str = None):
+        """Find exchange reaction for a metabolite
+
+        Parameters
+        ----------
+        model : cobra.Model
+            Metabolic model
+        metabolite_id : str
+            Metabolite ID to find exchange for
+        exchange_id : str, optional
+            Direct exchange reaction ID (e.g., 'HMR_9034' for Human-GEM).
+            If provided and found in model, used directly.
+        """
         try:
+            # Try direct exchange reaction ID lookup first
+            if exchange_id and exchange_id in [r.id for r in model.reactions]:
+                return model.reactions.get_by_id(exchange_id)
+
             # Try to find metabolite
             if metabolite_id in model.metabolites:
                 met = model.metabolites.get_by_id(metabolite_id)
