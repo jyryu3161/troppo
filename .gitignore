@@ -1,7 +1,26 @@
 /build/
 /dist/
-/examples/mcf7_case_study/.ipynb_checkpoints/
-/tests/.ipynb_checkpoints/
-/examples/mcf7_case_study/tINIT_test.lp
-
 /src/troppo.egg-info/
+
+# Jupyter checkpoints
+**/.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+*.egg-info/
+
+# Binary result files
+**/*.pkl
+**/*.pkl.*
+*.lp
+
+# Virtual environments
+troppo_env/
+.pixi/
+venv/
+.venv/
+env/
