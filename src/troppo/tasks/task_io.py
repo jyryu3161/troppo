@@ -199,7 +199,13 @@ class ExcelTaskIO(TaskIO):
 		flx_const = [('CHANGED ' + x).strip() for x in ['RXN'] + bounds]
 
 		core_info = shd_fail + inflows + outflows + eqs + flx_const
-		tdf = pd.read_excel(string, engine='xlrd')
+		# xlrd 2.0+ dropped .xlsx support; use openpyxl for xlsx/xlsm files
+		if hasattr(string, 'read'):
+			engine = 'openpyxl'
+		else:
+			ext = str(string).lower().rsplit('.', 1)[-1] if '.' in str(string) else ''
+			engine = 'xlrd' if ext == 'xls' else 'openpyxl'
+		tdf = pd.read_excel(string, engine=engine)
 		valid_tdf = tdf.loc[tdf.iloc[:, 0] != '#', :].iloc[:, 1:]
 
 		# create unique ids
@@ -269,10 +275,3 @@ class ExcelTaskIO(TaskIO):
 		raise Exception('Not yet implemented!')
 
 
-if __name__ == '__main__':
-	# jtio = JSONTaskIO()
-	# tasks = jtio.read_task('resources/generic_models/task_test.json')
-	# jtio.write_task('resources/generic_models/task_write_test.json', tasks)
-
-	etio = ExcelTaskIO()
-	tasks = etio.read_task('shared/task_sets/metabolicTasks_Essential.xlsx')

@@ -29,3 +29,8 @@ env/
 **/covid19_tinit_results/
 docs/
 *.pdf
+
+# Example output and large data files
+examples/results/
+examples/mcf7_case_study/results/
+tests/data/

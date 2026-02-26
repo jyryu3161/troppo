@@ -251,12 +251,18 @@ class Task(object):
                 reactions[reaction_name] = [v[0], (0, 0) if closed else v[1], reaction_name]
 
         ## flow_dict - add drains to the model
+        # ALLMETSIN is a special placeholder meaning "all metabolites available" — skip it
+        _ALLMETSIN_PLACEHOLDERS = {'ALLMETSIN[s]', 'ALLMETSIN[e]', 'ALLMETSIN'}
         for k, v in self.inflow_dict.items():
+            if k in _ALLMETSIN_PLACEHOLDERS:
+                continue
             sink_name = '_'.join([k, 'inflow'])
             if sink_name not in model.reaction_names:
                 reactions[sink_name] = [{k: 1}, (0, 0) if closed else v, sink_name]
 
         for k, v in self.outflow_dict.items():
+            if k in _ALLMETSIN_PLACEHOLDERS:
+                continue
             sink_name = '_'.join([k, 'outflow'])
             if sink_name not in model.reaction_names:
                 reactions[sink_name] = [{k: -1}, (0, 0) if closed else v, sink_name]
@@ -304,10 +310,13 @@ class Task(object):
         dict: The bounds for the task
 
         """
+        _ALLMETSIN_PLACEHOLDERS = {'ALLMETSIN[s]', 'ALLMETSIN[e]', 'ALLMETSIN'}
         master_dict = {}
         reac_bounds = {'_'.join([self.name, k, 'task_reaction']): v[1] for k, v in self.reaction_dict.items()}
-        inflow_bounds = {'_'.join([k, 'inflow']): v for k, v in self.inflow_dict.items()}
-        outflow_bounds = {'_'.join([k, 'outflow']): v for k, v in self.outflow_dict.items()}
+        inflow_bounds = {'_'.join([k, 'inflow']): v for k, v in self.inflow_dict.items()
+                         if k not in _ALLMETSIN_PLACEHOLDERS}
+        outflow_bounds = {'_'.join([k, 'outflow']): v for k, v in self.outflow_dict.items()
+                          if k not in _ALLMETSIN_PLACEHOLDERS}
         aflx_bounds = {k: (v[0], v[1]) for k, v in self.flux_constraints.items()}
         for d in [reac_bounds, inflow_bounds, outflow_bounds, aflx_bounds]:
             master_dict.update(d)
@@ -726,16 +735,16 @@ class TaskEvaluator(object):
 
 
 class TaskValidationResult:
-    """단일 샘플의 metabolic task 검증 결과 컨테이너.
+    """Container for metabolic task validation results of a single sample.
 
     Parameters
     ----------
     sample_name : str
-        샘플 이름.
+        Sample name.
     results : dict
-        {task_name: bool} 형태의 task별 pass/fail 결과.
+        Per-task pass/fail results as {task_name: bool}.
     medium_related : set
-        배지(medium) 조건과 관련된 task 이름 집합.
+        Names of tasks related to medium (exchange) conditions.
     """
 
     def __init__(self, sample_name: str, results: dict, medium_related: set):
@@ -745,79 +754,32 @@ class TaskValidationResult:
 
     @property
     def total(self) -> int:
-        """전체 task 수."""
+        """Total number of tasks."""
         return len(self.results)
 
     @property
     def passed(self) -> int:
-        """통과한 task 수."""
+        """Number of tasks that passed."""
         return sum(1 for v in self.results.values() if v)
 
     @property
     def failed_tasks(self) -> list:
-        """실패한 task 이름 목록."""
+        """List of failed task names."""
         return [k for k, v in self.results.items() if not v]
 
     @property
     def medium_passed(self) -> int:
-        """통과한 배지-연관 task 수."""
+        """Number of medium-related tasks that passed."""
         return sum(1 for k, v in self.results.items() if k in self.medium_related and v)
 
     @property
     def medium_total(self) -> int:
-        """배지-연관 task 전체 수."""
+        """Total number of medium-related tasks."""
         return len(self.medium_related)
 
     def to_series(self):
-        """결과를 pandas Series로 반환한다."""
+        """Return results as a pandas Series."""
         import pandas as pd
         return pd.Series(self.results, name=self.sample_name)
 
 
-if __name__ == '__main__':
-    from numpy import array
-
-    S = array([[1, -1, 0, 0, -1, 0, -1, 0, 0],
-               [0, 1, -1, 0, 0, 0, 0, 0, 0],
-               [0, 1, 0, 1, -1, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0, 1, -1, 0, 0],
-               [0, 0, 0, 0, 0, 0, 1, -1, 0],
-               [0, 0, 0, 0, 1, 0, 0, 1, -1]])
-
-    rx_names = ["R" + str(i) for i in range(1, 10)]
-    mt_names = ["M" + str(i) for i in range(1, 7)]
-
-    irrev = [0, 1, 2, 4, 5, 6, 7, 8]
-    bounds = [(0 if i in irrev else -1000, 1000) for i in range(9)]
-    lb, ub = list(zip(*bounds))
-    T = array([0] * S.shape[1]).reshape(1, S.shape[1])
-    T[0, 8] = -1
-    b = array([-1]).reshape(1, )
-
-    # tasks = TaskEvaluator(S, lb, ub, rx_names, mt_names)
-    from cobamp.core.models import ConstraintBasedModel
-
-    cbm = ConstraintBasedModel(S, list(zip(lb, ub)), rx_names, mt_names)
-
-    task = Task(
-        should_fail=False,
-        inflow_dict={'glucose': [0, 5]},
-        outflow_dict={'etanol': [3, 5]},
-        # 'm1 => 2 m2'
-        reaction_dict={'r1':
-                           ({'m1': -1, 'm2': 2}, (0, 1000))}
-    )
-
-    from troppo.tasks.task_io import JSONTaskIO
-
-    print(JSONTaskIO().write_to_string([task, task]))
-    tasks = [Task(
-        flow_dict={'M4': (-4, -4)},
-        should_fail=False,
-        flux_constraints={'R2': (i, 10)},
-        name=str(i)) for i in range(11)]
-
-    tev = TaskEvaluator(model=cbm, tasks=tasks)
-    for task in tev.tasks:
-        tev.current_task = task
-        print(task, tev.evaluate())

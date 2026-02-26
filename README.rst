@@ -184,6 +184,35 @@ let Troppo detect and convert IDs automatically::
         gene_id_type="auto"  # auto-detect and convert
     )
 
+**Biomass Flux and Essential Reaction Detection**
+
+By default, tINIT reconstructs reactions with evidence from expression data.
+This can silently exclude biomass pathway reactions (non-gene-associated),
+resulting in zero biomass flux even when growth tasks appear to pass.
+
+Use FVA-based auto-detection to identify the minimum set of reactions required
+for biomass production, then force them into the reconstruction::
+
+    # Step 1: detect biomass-essential reactions via FVA
+    essential, fva_df = recon.derive_biomass_essential_reactions(
+        biomass_rxn_id="biomass_human",  # auto-detected if None
+        min_fraction=0.01,               # require ≥1% of optimal biomass flux
+    )
+    print(f"FVA essential reactions: {len(essential)}")
+
+    # Step 2: force them into reconstruction, then run
+    recon.configure(essential_reactions=essential)
+    results = recon.run(samples=["sample1"])
+
+    # Step 3: verify biomass flux via FBA
+    m = results.get_model("sample1")
+    m.objective = "biomass_human"
+    sol = m.optimize()
+    print(f"Biomass flux: {sol.objective_value:.4f} mmol/gDW/h")
+
+This three-step pattern ensures the reconstructed model retains biomass
+production capacity while still reflecting sample-specific expression data.
+
 **Saving and Loading Results**
 
 ::
@@ -204,6 +233,13 @@ API Reference
 
     - ``troppo.TINITReconstructor`` - Main pipeline class
     - ``troppo.ReconstructionResults`` - Result container with analysis methods
+
+**Biomass Methods (TINITReconstructor)**
+
+    - ``recon.derive_biomass_essential_reactions(biomass_rxn_id, min_fraction, tol, processes)``
+      - Runs FVA with biomass constraint, returns ``(essential_rxn_ids, fva_df)``
+    - ``recon.configure(essential_reactions=...)``
+      - Forces specified reactions into tINIT reconstruction
 
 **I/O Functions**
 
